@@ -3,30 +3,28 @@
 
    SPDX-License-Identifier: GPL-3.0-or-later
 
-   This file is part of FanPico.
+   This file is part of pico-sensor-lib.
 
-   FanPico is free software: you can redistribute it and/or modify
+   pico-sensor-lib is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
-   FanPico is distributed in the hope that it will be useful,
+   pico-sensor-lib is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with FanPico. If not, see <https://www.gnu.org/licenses/>.
+   along with pico-sensor-lib. If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "pico/stdlib.h"
-#include "hardware/gpio.h"
-#include "hardware/i2c.h"
 
-#include "i2c.h"
+#include "pico_sensor_lib/i2c.h"
 
 /* SHT4X Commands */
 #define CMD_MEASURE_HP         0xfd
@@ -35,10 +33,6 @@
 #define CMD_READ_SERIAL        0x89
 #define CMD_SOFT_RESET         0x94
 
-typedef struct sht4x_context_t {
-	i2c_inst_t *i2c;
-	uint8_t addr;
-} sht4x_context_t;
 
 
 /* CRC-8 Lookup Table (Polymonial 0x31) */
@@ -75,7 +69,7 @@ static uint8_t crc8(uint8_t *buf, size_t len)
 
 void* sht4x_init(i2c_inst_t *i2c, uint8_t addr)
 {
-	sht4x_context_t *ctx = calloc(1, sizeof(sht4x_context_t));
+	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
 	uint8_t buf[6];
 	int res;
 
@@ -129,7 +123,7 @@ panic:
 
 int sht4x_start_measurement(void *ctx)
 {
-	sht4x_context_t *c = (sht4x_context_t*)ctx;
+	i2c_sensor_context_t *c = (i2c_sensor_context_t*)ctx;
 	int res;
 
 	/* Initiate measurement */
@@ -143,7 +137,7 @@ int sht4x_start_measurement(void *ctx)
 
 int sht4x_get_measurement(void *ctx, float *temp, float *pressure, float *humidity)
 {
-	sht4x_context_t *c = (sht4x_context_t*)ctx;
+	i2c_sensor_context_t *c = (i2c_sensor_context_t*)ctx;
 	int res;
 	uint8_t buf[6];
 	uint16_t t_raw = 0;
