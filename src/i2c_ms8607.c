@@ -112,24 +112,6 @@ static uint8_t crc4_rh(const uint16_t prom[])
 }
 #endif
 
-static uint8_t crc_hsensor(uint16_t value)
-{
-	uint32_t polynom = 0x988000;
-	uint32_t msb = 0x800000;
-	uint32_t mask = 0xff8000;
-	uint32_t result = (uint32_t)value << 8;
-
-	while (msb != 0x80) {
-		if (result & msb)
-			result = ((result ^ polynom) & mask) | (result & ~mask);
-		msb >>= 1;
-		mask >>= 1;
-		polynom >>= 1;
-	}
-
-	return result & 0xff;
-}
-
 
 void* ms8607_init(i2c_inst_t *i2c, uint8_t addr)
 {
@@ -316,8 +298,8 @@ int ms8607_get_measurement(void *ctx, float *temp, float *pressure, float *humid
 		res = i2c_read_raw(c->i2c, c->addr2, buf, sizeof(buf), false);
 		if (res)
 			return -2;
-		val = ((buf[0] << 8) | buf[1]); // & 0xfffc;
-		crc = crc_hsensor(val);
+		val = ((buf[0] << 8) | buf[1]);
+		crc = crc8_generic(buf, 2, 0x31, 0, 0, false, false);
 		if (crc != buf[2]) {
 			DEBUG_PRINT("CRC mismatch: %02x (%02x)\n", crc, buf[2]);
 			return -2;

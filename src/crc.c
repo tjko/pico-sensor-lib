@@ -26,7 +26,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-#define TEST 1
+//#define TEST 1
 
 #ifndef TEST
 #include "pico_sensor_lib.h"
@@ -118,7 +118,9 @@ uint8_t crc8_generic(uint8_t *buf, size_t len, uint8_t polynomial, uint8_t initi
 	uint8_t crc, cur;
 
 
+	/* Check if we have pre-calculated lookup table for the polynomial */
 	switch (polynomial) {
+
 	case 0x07:
 		lookup_table = crc8_07_lookup_table;
 		break;
@@ -128,10 +130,12 @@ uint8_t crc8_generic(uint8_t *buf, size_t len, uint8_t polynomial, uint8_t initi
 	case 0x31:
 		lookup_table = crc8_31_lookup_table;
 		break;
+
 	default:
 		lookup_table = NULL;
 	}
 
+	/* Calculate CRC-8 */
 	crc = initial;
 	for (size_t i = 0; i < len; i++) {
 		cur = in_reversed ? reverse_bits_u8(buf[i]) : buf[i];
@@ -157,6 +161,52 @@ uint8_t crc8_generic(uint8_t *buf, size_t len, uint8_t polynomial, uint8_t initi
 
 #ifdef TEST
 
+static uint8_t crc8(uint8_t *buf, size_t len)
+{
+	uint8_t crc = 0xff;
+
+	for (int i = 0; i < len; i++) {
+		crc = crc8_31_lookup_table[crc ^ buf[i]];
+	}
+
+	return crc;
+}
+
+static uint8_t aht_crc8(uint8_t *buf, uint len)
+{
+	uint8_t crc = 0xff;
+
+	for (uint i = 0; i < len; i++){
+		crc ^= buf[i];
+		for (uint j =  8; j > 0; --j) {
+			if (crc & 0x80)
+				crc = (crc << 1) ^ 0x31;
+			else
+				crc = (crc << 1);
+		}
+	}
+
+	return crc;
+}
+
+static uint8_t crc_hsensor(uint16_t value)
+{
+	uint32_t polynom = 0x988000;
+	uint32_t msb = 0x800000;
+	uint32_t mask = 0xff8000;
+	uint32_t result = (uint32_t)value << 8;
+
+	while (msb != 0x80) {
+		if (result & msb)
+			result = ((result ^ polynom) & mask) | (result & ~mask);
+		msb >>= 1;
+		mask >>= 1;
+		polynom >>= 1;
+	}
+
+	return result & 0xff;
+}
+
 int main(int argc, char **argv)
 {
 	printf("Hello\n");
@@ -164,12 +214,19 @@ int main(int argc, char **argv)
 	uint8_t buf[3];
 
 	buf[0] = 0x41;
-	buf[1] = 0x00;
+	buf[1] = 0xaa;
 	buf[2] = 0xcc;
+	uint16_t u = (buf[0] << 8) | buf[1];
 
-	uint8_t crc = crc8_generic(buf,sizeof(buf),0x31,0xff,0x00,true,true);
+
+	uint8_t crc = crc8_generic(buf,sizeof(buf),0x31,0xff,0x00,false,false);
 
 	printf("crc: %02x\n", crc);
+	printf("crc: %02x\n", crc8(buf,sizeof(buf)));
+	printf("aht-crc: %02x\n", aht_crc8(buf,sizeof(buf)));
+	printf("u=%04x (%02x %02x)\n", u, buf[0], buf[1]);
+	printf("crc_hsensor: %02x\n", crc_hsensor(u));
+	printf("new_crc_hsensor: %02x\n", crc8_generic(buf,2,0x31,0,0,false,false));
 
 	exit(0);
 }

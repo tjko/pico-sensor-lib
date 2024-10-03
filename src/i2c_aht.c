@@ -43,21 +43,9 @@ typedef struct aht_context_t {
 
 
 
-static uint8_t aht_crc8(uint8_t *buf, uint len)
+static inline uint8_t aht_crc8(uint8_t *buf, uint len)
 {
-	uint8_t crc = 0xff;
-
-	for (uint i = 0; i < len; i++){
-		crc ^= buf[i];
-		for (uint j =  8; j > 0; --j) {
-			if (crc & 0x80)
-				crc = (crc << 1) ^ 0x31;
-			else
-				crc = (crc << 1);
-		}
-	}
-
-	return crc;
+	return crc8_generic(buf, len, 0x31, 0xff, 0x00, false, false);
 }
 
 
