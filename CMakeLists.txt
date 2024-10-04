@@ -10,6 +10,7 @@ target_link_libraries(pico_sensor_lib INTERFACE
 
 target_sources(pico_sensor_lib INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/crc.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_adt7410.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_aht.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_as621x.c

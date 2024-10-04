@@ -3,30 +3,29 @@
 
    SPDX-License-Identifier: GPL-3.0-or-later
 
-   This file is part of FanPico.
+   This file is part of pico-sensor-lib.
 
-   FanPico is free software: you can redistribute it and/or modify
+   pico-sensor-lib is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
-   FanPico is distributed in the hope that it will be useful,
+   pico-sensor-lib is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with FanPico. If not, see <https://www.gnu.org/licenses/>.
+   along with pico-sensor-lib. If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "pico/stdlib.h"
-#include "hardware/gpio.h"
-#include "hardware/i2c.h"
 
-#include "i2c.h"
+#include "pico_sensor_lib/i2c.h"
+
 
 /* ADT7410 Registers */
 #define REG_TEMP_MSB       0x00
@@ -39,11 +38,6 @@
 #define ADT7410_DEVICE_ID 0xc8  // bits 7-3 (bits 2-0 contain silicon revision)
 
 
-typedef struct adt7410_context_t {
-	i2c_inst_t *i2c;
-	uint8_t addr;
-} adt7410_context_t;
-
 
 
 void* adt7410_init(i2c_inst_t *i2c, uint8_t addr)
@@ -51,7 +45,7 @@ void* adt7410_init(i2c_inst_t *i2c, uint8_t addr)
 	int res;
 	uint8_t val = 0;
 	uint8_t buf[3];
-	adt7410_context_t *ctx = calloc(1, sizeof(adt7410_context_t));
+	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
 
 
 	if (!ctx)
@@ -106,7 +100,7 @@ int adt7410_start_measurement(void *ctx)
 
 int adt7410_get_measurement(void *ctx, float *temp, float *pressure, float *humidity)
 {
-	adt7410_context_t *c = (adt7410_context_t*)ctx;
+	i2c_sensor_context_t *c = (i2c_sensor_context_t*)ctx;
 	int res;
 	uint8_t val;
 	uint16_t meas;

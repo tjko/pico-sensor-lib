@@ -30,14 +30,16 @@ extern "C"
 #endif
 
 
+
 uint get_i2c_sensor_type(const char *name);
 const char *i2c_sensor_type_str(uint type);
+bool i2c_reserved_address(uint8_t addr);
 
 void i2c_sensor_baudrate(uint baudrate);
 int i2c_init_sensor(uint8_t sensor_type, i2c_inst_t *i2c_bus, uint8_t addr, void **ctx);
-int i2c_start_measurement(int sensor_type, void *ctx);
-int i2c_get_measurement(int sensor_type, void *ctx, float *temp, float *pressure, float *humidity);
-
+int i2c_start_measurement(void *ctx);
+int i2c_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
+int i2c_shutdown_sensor(void *ctx);
 
 
 #ifdef __cplusplus

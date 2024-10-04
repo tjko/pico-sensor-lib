@@ -3,26 +3,27 @@
 
    SPDX-License-Identifier: GPL-3.0-or-later
 
-   This file is part of FanPico.
+   This file is part of pico-sensor-lib.
 
-   FanPico is free software: you can redistribute it and/or modify
+   pico-sensor-lib is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
-   FanPico is distributed in the hope that it will be useful,
+   pico-sensor-lib is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with FanPico. If not, see <https://www.gnu.org/licenses/>.
+   along with pico-sensor-lib. If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include <assert.h>
+#include <stdlib.h>
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 #include "hardware/i2c.h"
@@ -119,26 +120,26 @@ int tmp117_start_measurement(void *ctx);
 int tmp117_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 static const i2c_sensor_entry_t i2c_sensor_types[] = {
-	{ "NONE", NULL, NULL, NULL, false }, /* this needs to be first so that valid sensors have index > 0 */
-	{ "ADT7410", adt7410_init, adt7410_start_measurement, adt7410_get_measurement, false },
-	{ "AHT1x", aht1x_init, aht_start_measurement, aht_get_measurement, false },
-	{ "AHT2x", aht2x_init, aht_start_measurement, aht_get_measurement, false },
-	{ "AS621x", as621x_init, as621x_start_measurement, as621x_get_measurement, false },
-	{ "BMP180", bmp180_init, bmp180_start_measurement, bmp180_get_measurement, false },
-	{ "BMP280", bmp280_init, bmp280_start_measurement, bmp280_get_measurement, false },
-	{ "DPS310", dps310_init, dps310_start_measurement, dps310_get_measurement, false },
-	{ "LPS22", lps22_init, lps22_start_measurement, lps22_get_measurement, false },
-	{ "LPS25", lps25_init, lps25_start_measurement, lps25_get_measurement, false },
-	{ "MCP9808", mcp9808_init, mcp9808_start_measurement, mcp9808_get_measurement, false },
-	{ "MS8607", ms8607_init, ms8607_start_measurement, ms8607_get_measurement, true },
-	{ "PCT2075", pct2075_init, pct2075_start_measurement, pct2075_get_measurement, false },
-	{ "SHTC3", shtc3_init, shtc3_start_measurement, shtc3_get_measurement, false },
-	{ "SHT3x", sht3x_init, sht3x_start_measurement, sht3x_get_measurement, true },
-	{ "SHT4x", sht4x_init, sht4x_start_measurement, sht4x_get_measurement, true },
-	{ "STTS22H", stts22h_init, stts22h_start_measurement, stts22h_get_measurement, false },
-	{ "TMP102", tmp102_init, tmp102_start_measurement, tmp102_get_measurement, false },
-	{ "TMP117", tmp117_init, tmp117_start_measurement, tmp117_get_measurement, false },
-	{ NULL, NULL, NULL, NULL, false }
+	{ "NONE", NULL, NULL, NULL, NULL, false }, /* this needs to be first so that valid sensors have index > 0 */
+	{ "ADT7410", adt7410_init, adt7410_start_measurement, adt7410_get_measurement, NULL, false },
+	{ "AHT1x", aht1x_init, aht_start_measurement, aht_get_measurement, NULL, false },
+	{ "AHT2x", aht2x_init, aht_start_measurement, aht_get_measurement, NULL, false },
+	{ "AS621x", as621x_init, as621x_start_measurement, as621x_get_measurement, NULL, false },
+	{ "BMP180", bmp180_init, bmp180_start_measurement, bmp180_get_measurement, NULL, false },
+	{ "BMP280", bmp280_init, bmp280_start_measurement, bmp280_get_measurement, NULL, false },
+	{ "DPS310", dps310_init, dps310_start_measurement, dps310_get_measurement, NULL, false },
+	{ "LPS22", lps22_init, lps22_start_measurement, lps22_get_measurement, NULL, false },
+	{ "LPS25", lps25_init, lps25_start_measurement, lps25_get_measurement, NULL, false },
+	{ "MCP9808", mcp9808_init, mcp9808_start_measurement, mcp9808_get_measurement, NULL, false },
+	{ "MS8607", ms8607_init, ms8607_start_measurement, ms8607_get_measurement, NULL, true },
+	{ "PCT2075", pct2075_init, pct2075_start_measurement, pct2075_get_measurement, NULL, false },
+	{ "SHTC3", shtc3_init, shtc3_start_measurement, shtc3_get_measurement, NULL, false },
+	{ "SHT3x", sht3x_init, sht3x_start_measurement, sht3x_get_measurement, NULL, true },
+	{ "SHT4x", sht4x_init, sht4x_start_measurement, sht4x_get_measurement, NULL, true },
+	{ "STTS22H", stts22h_init, stts22h_start_measurement, stts22h_get_measurement, NULL, false },
+	{ "TMP102", tmp102_init, tmp102_start_measurement, tmp102_get_measurement, NULL, false },
+	{ "TMP117", tmp117_init, tmp117_start_measurement, tmp117_get_measurement, NULL, false },
+	{ NULL, NULL, NULL, NULL, NULL, false }
 };
 
 #define SENSOR_TYPES_COUNT ((sizeof(i2c_sensor_types) / sizeof(i2c_sensor_entry_t)) - 1)
@@ -167,26 +168,56 @@ int i2c_init_sensor(uint8_t sensor_type, i2c_inst_t *i2c_bus, uint8_t addr, void
 	}
 
 	/* Initialize sensor */
-	*ctx = i2c_sensor_types[sensor_type].init(i2c_bus, addr);
+	if (!(*ctx = i2c_sensor_types[sensor_type].init(i2c_bus, addr)))
+		return -3;
 
-	return (*ctx ? 0 : -3);
+	((i2c_sensor_context_t*)(*ctx))->sensor_type = sensor_type;
+
+	return 0;
 }
 
 
-int i2c_start_measurement(int sensor_type, void *ctx)
+int i2c_shutdown_sensor(void *ctx)
 {
-	if (sensor_type < 1 || sensor_type >= SENSOR_TYPES_COUNT || !ctx)
+	i2c_sensor_context_t *c = ctx;
+
+	if (!ctx)
 		return -1;
 
-	return i2c_sensor_types[sensor_type].start_measurement(ctx);
+	if (i2c_sensor_types[c->sensor_type].shutdown) {
+		i2c_sensor_types[c->sensor_type].shutdown(ctx);
+	}
+
+	free(ctx);
+
+	return 0;
 }
 
-int i2c_get_measurement(int sensor_type, void *ctx, float *temp, float *pressure, float *humidity)
+
+int i2c_start_measurement(void *ctx)
 {
-	if (sensor_type < 1 || sensor_type >= SENSOR_TYPES_COUNT || !ctx)
+	i2c_sensor_context_t *c = ctx;
+
+	if (!ctx)
 		return -1;
 
-	return i2c_sensor_types[sensor_type].get_measurement(ctx, temp, pressure, humidity);
+	if (c->sensor_type < 1 || c->sensor_type >= SENSOR_TYPES_COUNT)
+		return -2;
+
+	return i2c_sensor_types[c->sensor_type].start_measurement(ctx);
+}
+
+int i2c_get_measurement(void *ctx, float *temp, float *pressure, float *humidity)
+{
+	i2c_sensor_context_t *c = ctx;
+
+	if (!ctx)
+		return -1;
+
+	if (c->sensor_type < 1 || c->sensor_type >= SENSOR_TYPES_COUNT)
+		return -2;
+
+	return i2c_sensor_types[c->sensor_type].get_measurement(ctx, temp, pressure, humidity);
 }
 
 

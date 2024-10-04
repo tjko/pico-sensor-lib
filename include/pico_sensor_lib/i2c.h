@@ -24,6 +24,11 @@
 
 #include "hardware/i2c.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #ifndef I2C_DEBUG
 #define I2C_DEBUG 0
 #endif
@@ -56,20 +61,33 @@
 typedef void* (i2c_init_func_t)(i2c_inst_t *i2c, uint8_t addr);
 typedef int (i2c_start_measurement_func_t)(void *ctx);
 typedef int (i2c_get_measurement_func_t)(void *ctx, float *temp, float *pressure, float *humidity);
+typedef int (i2c_shutdown_func_t)(void *ctx);
 
 typedef struct i2c_sensor_entry {
 	const char* name;
 	i2c_init_func_t *init;
 	i2c_start_measurement_func_t *start_measurement;
 	i2c_get_measurement_func_t *get_measurement;
+	i2c_shutdown_func_t *shutdown;
 	bool no_scan;
 } i2c_sensor_entry_t;
 
+
+#define I2C_SENSOR_CONTEXT_MEMBERS \
+	uint16_t sensor_type;	   \
+	i2c_inst_t *i2c;	   \
+	uint8_t addr;
+
+typedef struct i2c_sensor_context {
+	I2C_SENSOR_CONTEXT_MEMBERS
+} i2c_sensor_context_t;
 
 extern uint i2c_current_baudrate;
 
 
 /* Helper functions for reading/writing sensor registers */
+
+/* i2c.c */
 int i2c_read_register_block(i2c_inst_t *i2c, uint8_t addr, uint8_t reg, uint8_t *buf, size_t len,
 	uint32_t read_delay_us);
 int i2c_read_register_u24(i2c_inst_t *i2c, uint8_t addr, uint8_t reg, uint32_t *val);
@@ -84,7 +102,11 @@ int i2c_write_raw_u16(i2c_inst_t *i2c, uint8_t addr, uint16_t cmd, bool nostop);
 int i2c_write_raw_u8(i2c_inst_t *i2c, uint8_t addr, uint8_t cmd, bool nostop);
 
 int32_t twos_complement(uint32_t value, uint8_t bits);
-bool i2c_reserved_address(uint8_t addr);
 
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* PICO_SENSOR_LIB_I2C_H */

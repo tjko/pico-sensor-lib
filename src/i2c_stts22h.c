@@ -3,30 +3,28 @@
 
    SPDX-License-Identifier: GPL-3.0-or-later
 
-   This file is part of FanPico.
+   This file is part of pico-sensor-lib.
 
-   FanPico is free software: you can redistribute it and/or modify
+   pico-sensor-lib is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
-   FanPico is distributed in the hope that it will be useful,
+   pico-sensor-lib is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with FanPico. If not, see <https://www.gnu.org/licenses/>.
+   along with pico-sensor-lib. If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "pico/stdlib.h"
-#include "hardware/gpio.h"
-#include "hardware/i2c.h"
 
-#include "i2c.h"
+#include "pico_sensor_lib/i2c.h"
 
 /* STTS22H Registers */
 #define REG_DEVICE_ID      0x01
@@ -39,17 +37,13 @@
 
 #define STTS22H_DEVICE_ID 0xa0
 
-typedef struct stts22h_context_t {
-	i2c_inst_t *i2c;
-	uint8_t addr;
-} stts22h_context_t;
 
 
 void* stts22h_init(i2c_inst_t *i2c, uint8_t addr)
 {
 	int res;
 	uint8_t val = 0;
-	stts22h_context_t *ctx = calloc(1, sizeof(stts22h_context_t));
+	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
 
 	if (!ctx)
 		return NULL;
@@ -96,7 +90,7 @@ int stts22h_start_measurement(void *ctx)
 
 int stts22h_get_measurement(void *ctx, float *temp, float *pressure, float *humidity)
 {
-	stts22h_context_t *c = (stts22h_context_t*)ctx;
+	i2c_sensor_context_t *c = (i2c_sensor_context_t*)ctx;
 	int res;
 	uint16_t val;
 

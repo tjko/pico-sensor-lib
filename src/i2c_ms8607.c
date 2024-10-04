@@ -3,30 +3,29 @@
 
    SPDX-License-Identifier: GPL-3.0-or-later
 
-   This file is part of FanPico.
+   This file is part of pico-sensor-lib.
 
-   FanPico is free software: you can redistribute it and/or modify
+   pico-sensor-lib is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
-   FanPico is distributed in the hope that it will be useful,
+   pico-sensor-lib is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with FanPico. If not, see <https://www.gnu.org/licenses/>.
+   along with pico-sensor-lib. If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "pico/stdlib.h"
-#include "hardware/gpio.h"
-#include "hardware/i2c.h"
 
-#include "i2c.h"
+#include "pico_sensor_lib/i2c.h"
+#include "pico_sensor_lib/crc.h"
 
 /* MS8607 Registers */
 
@@ -44,8 +43,7 @@
 
 
 typedef struct ms8607_context_t {
-	i2c_inst_t *i2c;
-	uint8_t addr;
+	struct { I2C_SENSOR_CONTEXT_MEMBERS };
 	uint8_t addr2;
 	uint8_t state;
 	uint16_t prom_pt[7];
@@ -114,24 +112,6 @@ static uint8_t crc4_rh(const uint16_t prom[])
 	return n_rem ^ 0x00;
 }
 #endif
-
-static uint8_t crc_hsensor(uint16_t value)
-{
-	uint32_t polynom = 0x988000;
-	uint32_t msb = 0x800000;
-	uint32_t mask = 0xff8000;
-	uint32_t result = (uint32_t)value << 8;
-
-	while (msb != 0x80) {
-		if (result & msb)
-			result = ((result ^ polynom) & mask) | (result & ~mask);
-		msb >>= 1;
-		mask >>= 1;
-		polynom >>= 1;
-	}
-
-	return result & 0xff;
-}
 
 
 void* ms8607_init(i2c_inst_t *i2c, uint8_t addr)
@@ -319,8 +299,8 @@ int ms8607_get_measurement(void *ctx, float *temp, float *pressure, float *humid
 		res = i2c_read_raw(c->i2c, c->addr2, buf, sizeof(buf), false);
 		if (res)
 			return -2;
-		val = ((buf[0] << 8) | buf[1]); // & 0xfffc;
-		crc = crc_hsensor(val);
+		val = ((buf[0] << 8) | buf[1]);
+		crc = crc8_generic(buf, 2, 0x31, 0, 0, false, false);
 		if (crc != buf[2]) {
 			DEBUG_PRINT("CRC mismatch: %02x (%02x)\n", crc, buf[2]);
 			return -2;
