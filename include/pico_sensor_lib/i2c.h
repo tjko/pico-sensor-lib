@@ -70,6 +70,7 @@ typedef struct i2c_sensor_entry {
 	i2c_get_measurement_func_t *get_measurement;
 	i2c_shutdown_func_t *shutdown;
 	bool no_scan;
+	uint8_t cycle_len;
 } i2c_sensor_entry_t;
 
 

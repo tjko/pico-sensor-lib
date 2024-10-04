@@ -120,25 +120,25 @@ int tmp117_start_measurement(void *ctx);
 int tmp117_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 static const i2c_sensor_entry_t i2c_sensor_types[] = {
-	{ "NONE", NULL, NULL, NULL, NULL, false }, /* this needs to be first so that valid sensors have index > 0 */
-	{ "ADT7410", adt7410_init, adt7410_start_measurement, adt7410_get_measurement, NULL, false },
-	{ "AHT1x", aht1x_init, aht_start_measurement, aht_get_measurement, NULL, false },
-	{ "AHT2x", aht2x_init, aht_start_measurement, aht_get_measurement, NULL, false },
-	{ "AS621x", as621x_init, as621x_start_measurement, as621x_get_measurement, NULL, false },
-	{ "BMP180", bmp180_init, bmp180_start_measurement, bmp180_get_measurement, NULL, false },
-	{ "BMP280", bmp280_init, bmp280_start_measurement, bmp280_get_measurement, NULL, false },
-	{ "DPS310", dps310_init, dps310_start_measurement, dps310_get_measurement, NULL, false },
-	{ "LPS22", lps22_init, lps22_start_measurement, lps22_get_measurement, NULL, false },
-	{ "LPS25", lps25_init, lps25_start_measurement, lps25_get_measurement, NULL, false },
-	{ "MCP9808", mcp9808_init, mcp9808_start_measurement, mcp9808_get_measurement, NULL, false },
-	{ "MS8607", ms8607_init, ms8607_start_measurement, ms8607_get_measurement, NULL, true },
-	{ "PCT2075", pct2075_init, pct2075_start_measurement, pct2075_get_measurement, NULL, false },
-	{ "SHTC3", shtc3_init, shtc3_start_measurement, shtc3_get_measurement, NULL, false },
-	{ "SHT3x", sht3x_init, sht3x_start_measurement, sht3x_get_measurement, NULL, true },
-	{ "SHT4x", sht4x_init, sht4x_start_measurement, sht4x_get_measurement, NULL, true },
-	{ "STTS22H", stts22h_init, stts22h_start_measurement, stts22h_get_measurement, NULL, false },
-	{ "TMP102", tmp102_init, tmp102_start_measurement, tmp102_get_measurement, NULL, false },
-	{ "TMP117", tmp117_init, tmp117_start_measurement, tmp117_get_measurement, NULL, false },
+	{ "NONE", NULL, NULL, NULL, NULL, false, 0 }, /* this needs to be first so that valid sensors have index > 0 */
+	{ "ADT7410", adt7410_init, adt7410_start_measurement, adt7410_get_measurement, NULL, false, 1 },
+	{ "AHT1x", aht1x_init, aht_start_measurement, aht_get_measurement, NULL, false, 1 },
+	{ "AHT2x", aht2x_init, aht_start_measurement, aht_get_measurement, NULL, false, 1 },
+	{ "AS621x", as621x_init, as621x_start_measurement, as621x_get_measurement, NULL, false, 1 },
+	{ "BMP180", bmp180_init, bmp180_start_measurement, bmp180_get_measurement, NULL, false, 2 },
+	{ "BMP280", bmp280_init, bmp280_start_measurement, bmp280_get_measurement, NULL, false, 1 },
+	{ "DPS310", dps310_init, dps310_start_measurement, dps310_get_measurement, NULL, false, 1 },
+	{ "LPS22", lps22_init, lps22_start_measurement, lps22_get_measurement, NULL, false, 1 },
+	{ "LPS25", lps25_init, lps25_start_measurement, lps25_get_measurement, NULL, false, 1 },
+	{ "MCP9808", mcp9808_init, mcp9808_start_measurement, mcp9808_get_measurement, NULL, false, 1 },
+	{ "MS8607", ms8607_init, ms8607_start_measurement, ms8607_get_measurement, NULL, true, 3 },
+	{ "PCT2075", pct2075_init, pct2075_start_measurement, pct2075_get_measurement, NULL, false, 1 },
+	{ "SHTC3", shtc3_init, shtc3_start_measurement, shtc3_get_measurement, NULL, false, 1 },
+	{ "SHT3x", sht3x_init, sht3x_start_measurement, sht3x_get_measurement, NULL, true, 1 },
+	{ "SHT4x", sht4x_init, sht4x_start_measurement, sht4x_get_measurement, NULL, true, 1 },
+	{ "STTS22H", stts22h_init, stts22h_start_measurement, stts22h_get_measurement, NULL, false, 1 },
+	{ "TMP102", tmp102_init, tmp102_start_measurement, tmp102_get_measurement, NULL, false, 1 },
+	{ "TMP117", tmp117_init, tmp117_start_measurement, tmp117_get_measurement, NULL, false, 1 },
 	{ NULL, NULL, NULL, NULL, NULL, false }
 };
 
@@ -207,7 +207,7 @@ int i2c_start_measurement(void *ctx)
 	return i2c_sensor_types[c->sensor_type].start_measurement(ctx);
 }
 
-int i2c_get_measurement(void *ctx, float *temp, float *pressure, float *humidity)
+int i2c_read_measurement(void *ctx, float *temp, float *pressure, float *humidity)
 {
 	i2c_sensor_context_t *c = ctx;
 
@@ -220,6 +220,32 @@ int i2c_get_measurement(void *ctx, float *temp, float *pressure, float *humidity
 	return i2c_sensor_types[c->sensor_type].get_measurement(ctx, temp, pressure, humidity);
 }
 
+
+int i2c_run_measurement(void *ctx, float *temp, float *pressure, float *humidity)
+{
+	i2c_sensor_context_t *c = ctx;
+	const i2c_sensor_entry_t *sensor = NULL;
+	int res = -1;
+
+	if (!ctx)
+		return -1;
+	if (c->sensor_type < 1 || c->sensor_type >= SENSOR_TYPES_COUNT)
+		return -2;
+
+	sensor = &i2c_sensor_types[c->sensor_type];
+
+	for (int i = 0; i < sensor->cycle_len; i++) {
+		res = sensor->start_measurement(ctx);
+		if (res < 0)
+			return res;
+		sleep_ms(res);
+		res = sensor->get_measurement(ctx, temp, pressure, humidity);
+		if (res < 0)
+			return res;
+	}
+
+	return res;
+}
 
 
 inline int32_t twos_complement(uint32_t value, uint8_t bits)
@@ -488,10 +514,10 @@ uint get_i2c_sensor_type(const char *name)
 }
 
 
-const char *i2c_sensor_type_str(uint type)
+const char *i2c_sensor_type_str(uint sensor_type)
 {
-	if (type >=0 && type < SENSOR_TYPES_COUNT) {
-		return i2c_sensor_types[type].name;
+	if (sensor_type >=0 && sensor_type < SENSOR_TYPES_COUNT) {
+		return i2c_sensor_types[sensor_type].name;
 	}
 
 	return "NONE";

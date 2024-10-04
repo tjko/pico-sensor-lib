@@ -63,10 +63,8 @@ static void* aht_init(i2c_inst_t *i2c, uint8_t addr, uint8_t type)
 	ctx->type = type;
 
 	/* Reset sensor*/
-	buf[0] = AHT_REG_RESET;
-	res  = i2c_write_timeout_us(i2c, addr, buf, 1, false,
-				I2C_WRITE_TIMEOUT(1));
-	if (res < 1)
+	res = i2c_write_raw_u8(i2c, addr, AHT_REG_RESET, false);
+	if (res)
 		goto panic;
 
 	/* Wait for sensor to soft reset (should be done in 20ms?)  */
@@ -132,9 +130,8 @@ int aht_get_measurement(void *ctx, float *temp, float *pressure, float *humidity
 	int len = c->type == 1 ? 6 : 7;
 
 	/* Read data from sensor... */
-	res = i2c_read_timeout_us(c->i2c, c->addr, buf, len, false,
-				I2C_READ_TIMEOUT(len));
-	if (res < len)
+	res = i2c_read_raw(c->i2c, c->addr, buf, len, false);
+	if (res)
 		return -1;
 
 	DEBUG_PRINT("aht: len=%d, status=%02x\n", len, buf[0]);

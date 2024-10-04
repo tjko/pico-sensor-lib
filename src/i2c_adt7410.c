@@ -44,7 +44,6 @@ void* adt7410_init(i2c_inst_t *i2c, uint8_t addr)
 {
 	int res;
 	uint8_t val = 0;
-	uint8_t buf[3];
 	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
 
 
@@ -59,10 +58,8 @@ void* adt7410_init(i2c_inst_t *i2c, uint8_t addr)
 		goto panic;
 
 	/* Reset Sensor */
-	buf[0] = REG_RESET;
-	res = i2c_write_timeout_us(i2c, addr, buf, 1, false,
-				I2C_WRITE_TIMEOUT(1));
-	if (res < 1)
+	res = i2c_write_raw_u8(i2c, addr, REG_RESET, false);
+	if (res)
 		goto panic;
 
 	/* Wait for sensor to soft reset (reset should take 200us per datasheet)  */
