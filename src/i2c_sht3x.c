@@ -25,6 +25,7 @@
 #include "pico/stdlib.h"
 
 #include "pico_sensor_lib/i2c.h"
+#include "pico_sensor_lib/crc.h"
 
 /* SHT3X Commands */
 #define CMD_MEASURE            0x2400 // high repeatability, clock stretching disabled

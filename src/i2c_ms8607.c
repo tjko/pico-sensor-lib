@@ -25,6 +25,7 @@
 #include "pico/stdlib.h"
 
 #include "pico_sensor_lib/i2c.h"
+#include "pico_sensor_lib/crc.h"
 
 /* MS8607 Registers */
 

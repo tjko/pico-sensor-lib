@@ -25,6 +25,7 @@
 #include "pico/stdlib.h"
 
 #include "pico_sensor_lib/i2c.h"
+#include "pico_sensor_lib/crc.h"
 
 /* SHTC3 Commands */
 #define CMD_SLEEP              0xb098

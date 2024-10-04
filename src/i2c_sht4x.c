@@ -25,6 +25,7 @@
 #include "pico/stdlib.h"
 
 #include "pico_sensor_lib/i2c.h"
+#include "pico_sensor_lib/crc.h"
 
 /* SHT4X Commands */
 #define CMD_MEASURE_HP         0xfd
