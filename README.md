@@ -55,6 +55,44 @@ target_link_libraries(myprogram PRIVATE
   )
 ```
 
+### Using _pico-sensor_lib_library
+
+This library is meant to be used in "non-blocking" fashion, where measurement is first initiated using _i2c_start_measurement()_ call, and then (after measurement is complete) results are read using _i2c_read_measurement()_ call.
+
+#### Initializing a sensor
+
+First a sensor must be initialized using _i2c_init_sensor()_ function. This function returns context that then can be used to perform measurements on the sensor.
+
+```
+// Initialize sensor
+void *ctx = NULL;
+int res = i2c_init_sensor(get_i2c_sensor_type("DPS310"), i2cbus, 0x77, &ctx);
+if (res) {
+   // failed to initialize sensor...
+}
+```
+
+#### Performing Measurements
+
+Measurements are done by first intiating measurement using _i2c_start_measurement()_, and then waiting (at least) the time it takes for sensor to perform a measurement.
+Results can then be collected by calling _i2c_read_measurement()_. This function returns number of milliseconds to wait for sensor to complete its measurement(s).
+
+```
+int delay = i2c_start_measurement(ctx);
+if (delay < 0) {
+  // failed to initiate measurement...
+}
+```
+
+Wait at least for ```delay``` milliseconds, before reading the measurement results:
+
+```
+float temp, pressure, humidity;
+int res = i2c_read_measurement(ctx, &temp, &pressure, &humidity);
+if (res) {
+  // failed to read measurements...
+}
+```
 
 ## Examples
 
