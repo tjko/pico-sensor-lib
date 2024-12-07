@@ -32,6 +32,16 @@
 #include "pico_sensor_lib/i2c.h"
 
 
+#define I2C_TIMEOUT_SCALE_FACTOR (10000 / i2c_current_baudrate)
+
+// timeouts in us (at 1000kHz)
+#define I2C_READ_BASE_TIMEOUT 10000
+#define I2C_WRITE_BASE_TIMEOUT 10000
+
+#define I2C_READ_TIMEOUT(x) ((I2C_READ_BASE_TIMEOUT + (x * 250)) * I2C_TIMEOUT_SCALE_FACTOR / 10)
+#define I2C_WRITE_TIMEOUT(x) ((I2C_WRITE_BASE_TIMEOUT + (x * 250)) * I2C_TIMEOUT_SCALE_FACTOR / 10)
+
+
 
 /* i2c_adt7410.c */
 void* adt7410_init(i2c_inst_t *i2c, uint8_t addr);
@@ -145,11 +155,12 @@ static const i2c_sensor_entry_t i2c_sensor_types[] = {
 #define SENSOR_TYPES_COUNT ((sizeof(i2c_sensor_types) / sizeof(i2c_sensor_entry_t)) - 1)
 
 
-uint i2c_current_baudrate = 1000;  // kHz
+static uint i2c_current_baudrate = 1000;  // kHz
 
 void i2c_sensor_baudrate(uint baudrate)
 {
-	i2c_current_baudrate = baudrate;
+	if (baudrate > 0)
+		i2c_current_baudrate = baudrate;
 }
 
 int i2c_init_sensor(uint8_t sensor_type, i2c_inst_t *i2c_bus, uint8_t addr, void **ctx)

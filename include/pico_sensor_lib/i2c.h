@@ -47,15 +47,6 @@ extern "C"
 #endif
 
 
-#define I2C_TIMEOUT_SCALE_FACTOR (10000 / i2c_current_baudrate)
-
-
-// timeouts in us (at 1000kHz)
-#define I2C_READ_BASE_TIMEOUT 10000
-#define I2C_WRITE_BASE_TIMEOUT 10000
-
-#define I2C_READ_TIMEOUT(x) ((I2C_READ_BASE_TIMEOUT + (x * 250)) * 10 / I2C_TIMEOUT_SCALE_FACTOR)
-#define I2C_WRITE_TIMEOUT(x) ((I2C_WRITE_BASE_TIMEOUT + (x * 250)) * 10 / I2C_TIMEOUT_SCALE_FACTOR)
 
 
 typedef void* (i2c_init_func_t)(i2c_inst_t *i2c, uint8_t addr);
@@ -83,7 +74,6 @@ typedef struct i2c_sensor_context {
 	I2C_SENSOR_CONTEXT_MEMBERS
 } i2c_sensor_context_t;
 
-extern uint i2c_current_baudrate;
 
 
 /* Helper functions for reading/writing sensor registers */
