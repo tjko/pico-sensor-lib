@@ -89,6 +89,11 @@ void* mcp9808_init(i2c_inst_t *i2c, uint8_t addr);
 int mcp9808_start_measurement(void *ctx);
 int mcp9808_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
+/* i2c_ms5611.c */
+void* ms5611_init(i2c_inst_t *i2c, uint8_t addr);
+int ms5611_start_measurement(void *ctx);
+int ms5611_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
+
 /* i2c_ms8607.c */
 void* ms8607_init(i2c_inst_t *i2c, uint8_t addr);
 int ms8607_start_measurement(void *ctx);
@@ -141,6 +146,7 @@ static const i2c_sensor_entry_t i2c_sensor_types[] = {
 	{ "LPS22", lps22_init, lps22_start_measurement, lps22_get_measurement, NULL, false, 1 },
 	{ "LPS25", lps25_init, lps25_start_measurement, lps25_get_measurement, NULL, false, 1 },
 	{ "MCP9808", mcp9808_init, mcp9808_start_measurement, mcp9808_get_measurement, NULL, false, 1 },
+	{ "MS5611", ms5611_init, ms5611_start_measurement, ms5611_get_measurement, NULL, true, 2 },
 	{ "MS8607", ms8607_init, ms8607_start_measurement, ms8607_get_measurement, NULL, true, 3 },
 	{ "PCT2075", pct2075_init, pct2075_start_measurement, pct2075_get_measurement, NULL, false, 1 },
 	{ "SHTC3", shtc3_init, shtc3_start_measurement, shtc3_get_measurement, NULL, false, 1 },
@@ -149,7 +155,7 @@ static const i2c_sensor_entry_t i2c_sensor_types[] = {
 	{ "STTS22H", stts22h_init, stts22h_start_measurement, stts22h_get_measurement, NULL, false, 1 },
 	{ "TMP102", tmp102_init, tmp102_start_measurement, tmp102_get_measurement, NULL, false, 1 },
 	{ "TMP117", tmp117_init, tmp117_start_measurement, tmp117_get_measurement, NULL, false, 1 },
-	{ NULL, NULL, NULL, NULL, NULL, false }
+	{ NULL, NULL, NULL, NULL, NULL, false, 0 }
 };
 
 #define SENSOR_TYPES_COUNT ((sizeof(i2c_sensor_types) / sizeof(i2c_sensor_entry_t)) - 1)

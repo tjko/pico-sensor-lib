@@ -1,5 +1,5 @@
 /* i2c_ms8607.c
-   Copyright (C) 2024 Timo Kokkonen <tjko@iki.fi>
+   Copyright (C) 2024-2025 Timo Kokkonen <tjko@iki.fi>
 
    SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -60,19 +60,25 @@ typedef struct ms8607_context_t {
 static uint8_t crc4_pt(const uint16_t prom[])
 {
 	uint16_t n_rem = 0;
-	uint16_t n_prom[8];
 
-	memcpy(n_prom, prom, 7 * sizeof(uint16_t));
-	n_prom[7] = 0;
-	n_prom[0] &= 0x0fff;
+	for (uint8_t cnt = 0; cnt < 16; cnt++) {
+		uint8_t prom_idx = cnt >> 1;
+		uint16_t n_prom;
 
-	for (int cnt = 0; cnt < 16; cnt++) {
-		if (cnt % 2 == 1)
-			n_rem ^= n_prom[cnt >> 1] & 0xff;
+		if (prom_idx < 7)
+			n_prom = prom[prom_idx];
 		else
-			n_rem ^= n_prom[cnt >> 1] >> 8;
+			n_prom = 0;
 
-		for (int n_bit = 8; n_bit > 0; n_bit--) {
+		if (prom_idx == 0)
+			n_prom &= 0x0fff;
+
+		if (cnt % 2 == 1)
+			n_rem ^= n_prom & 0xff;
+		else
+			n_rem ^= n_prom >> 8;
+
+		for (uint8_t n_bit = 8; n_bit > 0; n_bit--) {
 			if (n_rem & 0x8000)
 				n_rem = (n_rem << 1) ^ 0x3000;
 			else
@@ -84,21 +90,28 @@ static uint8_t crc4_pt(const uint16_t prom[])
 	return n_rem ^ 0x00;
 }
 
+
 #if 0
 static uint8_t crc4_rh(const uint16_t prom[])
 {
 	uint16_t n_rem = 0;
-	uint16_t n_prom[8];
-
- 	memcpy(n_prom, prom, 7 * sizeof(uint16_t));
-	n_prom[7] = 0;
-	n_prom[6] &= 0xfff0;
 
 	for (int cnt = 0; cnt < 16; cnt++) {
-		if (cnt % 2 == 1)
-			n_rem ^= n_prom[cnt >> 1] & 0xff;
+		uint8_t prom_idx = cnt >> 1;
+		uint16_t n_prom;
+
+		if (prom_idx < 7)
+			n_prom = prom[prom_idx];
 		else
-			n_rem ^= n_prom[cnt >> 1] >> 8;
+			n_prom = 0;
+
+		if (prom_idx == 6)
+			n_prom &= 0xfff0;
+
+		if (cnt % 2 == 1)
+			n_rem ^= n_prom & 0xff;
+		else
+			n_rem ^= n_prom >> 8;
 
 		for (int n_bit = 8; n_bit > 0; n_bit--) {
 			if (n_rem & 0x8000)
@@ -148,7 +161,7 @@ void* ms8607_init(i2c_inst_t *i2c, uint8_t addr)
 					&ctx->prom_pt[i]);
 		if (res)
 			goto panic;
-		sleep_us(100);
+		sleep_ms(1);
 	}
 	DEBUG_PRINT("C1=%u\n", ctx->prom_pt[1]);
 	DEBUG_PRINT("C2=%u\n", ctx->prom_pt[2]);
@@ -157,22 +170,24 @@ void* ms8607_init(i2c_inst_t *i2c, uint8_t addr)
 	DEBUG_PRINT("C5=%u\n", ctx->prom_pt[5]);
 	DEBUG_PRINT("C6=%u\n", ctx->prom_pt[6]);
 	crc = crc4_pt(ctx->prom_pt);
-	DEBUG_PRINT("CRC-4: %02x (%02x)\n", crc, ctx->prom_pt[0] >> 12);
+	DEBUG_PRINT("PT PROM CRC-4: %02x (%02x)\n", crc, ctx->prom_pt[0] >> 12);
 	if (crc != (ctx->prom_pt[0] >> 12))
 		goto panic;
 
 #if 0
 	/* Read RH PROM */
-	sleep_us(1000);
 	for (int i = 0; i < 7; i++) {
 		res = i2c_read_register_u16(ctx->i2c, ctx->addr2, PROM_READ + (i * 2),
 					&ctx->prom_rh[i]);
 		if (res)
 			goto panic;
-		sleep_us(1000);
+		sleep_ms(5);
+	}
+	for (int i = 0; i < 7; i++) {
+		DEBUG_PRINT("RH PROM[%d]=%04x\n", i, ctx->prom_rh[i]);
 	}
 	crc = crc4_rh(ctx->prom_rh);
-	DEBUG_PRINT("CRC-4: %02x (%02x)\n", crc, ctx->prom_rh[6] & 0x0f);
+	DEBUG_PRINT("RH PROM CRC-4: %02x (%02x)\n", crc, ctx->prom_rh[6] & 0x0f);
 	if (crc != (ctx->prom_rh[6] & 0x0f))
 		goto panic;
 #endif
@@ -246,7 +261,7 @@ int ms8607_get_measurement(void *ctx, float *temp, float *pressure, float *humid
 	uint32_t val;
 	uint8_t buf[3], crc;
 	int32_t dt, t, p, rh, t2;
-	int64_t off, sens, off2, sens2;
+	int64_t off, sens, off2, sens2, tmp;
 
 
 	if (c->state == 0 || c->state == 1) {
@@ -256,10 +271,9 @@ int ms8607_get_measurement(void *ctx, float *temp, float *pressure, float *humid
 
 		if (c->state == 0) {
 			c->d1 = val;
+			DEBUG_PRINT("D1 = %lu\n", c->d1);
 		} else {
 			c->d2 = val;
-
-			DEBUG_PRINT("D1 = %lu\n", c->d1);
 			DEBUG_PRINT("D2 = %lu\n", c->d2);
 
 			dt = (int32_t)c->d2 - ((int32_t)c->prom_pt[5] << 8);
@@ -270,11 +284,13 @@ int ms8607_get_measurement(void *ctx, float *temp, float *pressure, float *humid
 			/* Second order compensation */
 			if (t < 2000) {
 				t2 = (3 * (int64_t)dt * (int64_t)dt) >> 33;
-				off2 = (61 * ((int64_t)t - 2000) * ((int64_t)t - 2000)) >> 4;
-				sens2 = (29 * ((int64_t)t - 2000) * ((int64_t)t - 2000)) >> 4;
+				tmp = ((int64_t)t - 2000) * ((int64_t)t - 2000);
+				off2 = (61 * tmp) >> 4;
+				sens2 = (29 * tmp) >> 4;
 				if (t < -1500) {
-					off2 += 17 * ((int64_t)t + 1500) * ((int64_t)t + 1500);
-					sens2 += 9 * ((int64_t)t + 1500) * ((int64_t)t + 1500);
+					tmp = ((int64_t)t + 1500) * ((int64_t)t + 1500);
+					off2 += 17 * tmp;
+					sens2 += 9 * tmp;
 				}
 			} else {
 				t2 = (5 * ((int64_t)dt * (int64_t)dt)) >> 38;
@@ -282,7 +298,7 @@ int ms8607_get_measurement(void *ctx, float *temp, float *pressure, float *humid
 				sens2 = 0;
 			}
 
-			off = ((int64_t)c->prom_pt[2] << 17) + (((int64_t)(c->prom_pt[4] * dt)) >> 6);
+			off = ((int64_t)c->prom_pt[2] << 17) + (((int64_t)c->prom_pt[4] * dt) >> 6);
 			off -= off2;
 			DEBUG_PRINT("OFF = %lld\n", off);
 			sens = ((int64_t)c->prom_pt[1] << 16) + (((int64_t)c->prom_pt[3] * dt) >>  7);
