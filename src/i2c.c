@@ -1,5 +1,5 @@
 /* i2c.c
-   Copyright (C) 2024 Timo Kokkonen <tjko@iki.fi>
+   Copyright (C) 2024-2025 Timo Kokkonen <tjko@iki.fi>
 
    SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -119,6 +119,11 @@ void* sht4x_init(i2c_inst_t *i2c, uint8_t addr);
 int sht4x_start_measurement(void *ctx);
 int sht4x_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
+/* i2c_si7021.c */
+void* si7021_init(i2c_inst_t *i2c, uint8_t addr);
+int si7021_start_measurement(void *ctx);
+int si7021_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
+
 /* i2c_stts22h.c */
 void* stts22h_init(i2c_inst_t *i2c, uint8_t addr);
 int stts22h_start_measurement(void *ctx);
@@ -152,6 +157,7 @@ static const i2c_sensor_entry_t i2c_sensor_types[] = {
 	{ "SHTC3", shtc3_init, shtc3_start_measurement, shtc3_get_measurement, NULL, false, 1 },
 	{ "SHT3x", sht3x_init, sht3x_start_measurement, sht3x_get_measurement, NULL, true, 1 },
 	{ "SHT4x", sht4x_init, sht4x_start_measurement, sht4x_get_measurement, NULL, true, 1 },
+	{ "SI7021", si7021_init, si7021_start_measurement, si7021_get_measurement, NULL, false, 1 },
 	{ "STTS22H", stts22h_init, stts22h_start_measurement, stts22h_get_measurement, NULL, false, 1 },
 	{ "TMP102", tmp102_init, tmp102_start_measurement, tmp102_get_measurement, NULL, false, 1 },
 	{ "TMP117", tmp117_init, tmp117_start_measurement, tmp117_get_measurement, NULL, false, 1 },
@@ -381,26 +387,25 @@ int i2c_read_register_u8(i2c_inst_t *i2c, uint8_t addr, uint8_t reg, uint8_t *va
 
 int i2c_write_register_block(i2c_inst_t *i2c, uint8_t addr, uint8_t reg, const uint8_t *buf, size_t len)
 {
-	uint8_t tmp[128];
 	int res;
 
 	DEBUG_PRINT("args=%p,%02x,%02x,%p,%u\n", i2c, addr, reg, buf, len);
-	tmp[0] = reg;
-	if (len >= sizeof(tmp)) {
-		DEBUG_PRINT("too large buffer: %d\n", len);
+
+	res = i2c_write_timeout_us(i2c, addr, &reg, 1, true, I2C_WRITE_TIMEOUT(1));
+	if (res < 1) {
+		DEBUG_PRINT("write register failed (%d)\n", res);
 		return -1;
 	}
-	memcpy(&tmp[1], buf, len);
-	res = i2c_write_timeout_us(i2c, addr, buf, len + 1, false,
-				I2C_WRITE_TIMEOUT(len + 1));
-	if (res < len + 1) {
+	res = i2c_write_timeout_us(i2c, addr, buf, len, false,
+				I2C_WRITE_TIMEOUT(len));
+	if (res < len) {
 		DEBUG_PRINT("write register values failed (%d)\n", res);
 		return -2;
 	} else {
 #if I2C_DEBUG > 0
-		DEBUG_PRINT("write ok: %d [", res);
+		DEBUG_PRINT("write ok: %d [ %02x ", res + 1, reg);
 		for(int i = 0; i <= len; i++) {
-			printf(" %02x", tmp[i]);
+			printf(" %02x", buf[i]);
 		}
 		printf(" ]\n");
 #endif
@@ -472,15 +477,37 @@ int i2c_read_raw(i2c_inst_t *i2c, uint8_t addr, uint8_t *buf, size_t len, bool n
 }
 
 
-int i2c_write_raw_u16(i2c_inst_t *i2c, uint8_t addr, uint16_t cmd, bool nostop)
+int i2c_read_raw_u16(i2c_inst_t *i2c, uint8_t addr, uint16_t *val, bool nostop)
+{
+	int res;
+	uint8_t buf[2];
+
+	DEBUG_PRINT("args=%p,%02x,%p\n", i2c, addr, val);
+
+	res = i2c_read_timeout_us(i2c, addr, buf, 2, nostop,
+				I2C_READ_TIMEOUT(2));
+	if (res < 2) {
+		DEBUG_PRINT("read failed (%d)\n", res);
+		return -2;
+	}
+
+	*val = (buf[0] << 8) | buf[1];
+
+	DEBUG_PRINT("read ok: %04x\n", *val);
+
+	return 0;
+}
+
+
+int i2c_write_raw_u16(i2c_inst_t *i2c, uint8_t addr, uint16_t val, bool nostop)
 {
 	uint8_t buf[2];
 	int res;
 
-	buf[0] = cmd >> 8;
-	buf[1] = cmd & 0xff;
+	buf[0] = val >> 8;
+	buf[1] = val & 0xff;
 
-	DEBUG_PRINT("args=%p,%02x,%04x\n", i2c, addr, cmd);
+	DEBUG_PRINT("args=%p,%02x,%04x\n", i2c, addr, val);
 
 	res = i2c_write_timeout_us(i2c, addr, buf, 2, nostop,
 				I2C_WRITE_TIMEOUT(2));
@@ -493,13 +520,13 @@ int i2c_write_raw_u16(i2c_inst_t *i2c, uint8_t addr, uint16_t cmd, bool nostop)
 }
 
 
-int i2c_write_raw_u8(i2c_inst_t *i2c, uint8_t addr, uint8_t cmd, bool nostop)
+int i2c_write_raw_u8(i2c_inst_t *i2c, uint8_t addr, uint8_t val, bool nostop)
 {
 	int res;
 
-	DEBUG_PRINT("args=%p,%02x,%04x\n", i2c, addr, cmd);
+	DEBUG_PRINT("args=%p,%02x,%02x\n", i2c, addr, val);
 
-	res = i2c_write_timeout_us(i2c, addr, &cmd, 1, nostop,
+	res = i2c_write_timeout_us(i2c, addr, &val, 1, nostop,
 				I2C_WRITE_TIMEOUT(1));
 	if (res < 1) {
 		DEBUG_PRINT("write failed (%d)\n", res);
