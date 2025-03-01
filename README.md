@@ -17,6 +17,7 @@ AS621x||AS621x series: AS6212 (0.2C), AC6214 (0.4C), AC6218 (0.8C)
 BMP180||16bit, 0.5C accuracy
 BMP280|0x76, 0x77|20bit, 0.5C accuracy
 DPS310|0x77, 0x76|24bit, 0.5C accuracy
+HDC302x|0x44, 0x45, 0x46, 0x47|HDC302x Series Temperature and Humiditysensors (HDC3022, HDC3021, HDC3020)
 LPS22|0x5d, 0x5c|Temperature and Pressure sensor
 LPS25|0x5d, 0x5c|Temperature and Pressure sensor, 2C accuracy
 MCP9808||13bit, 0.25C accuracy

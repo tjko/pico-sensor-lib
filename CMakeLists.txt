@@ -17,6 +17,7 @@ target_sources(pico_sensor_lib INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_bmp180.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_bmp280.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_dps310.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/i2c_hdc302x.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_lps22.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_lps25.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_mcp9808.c
