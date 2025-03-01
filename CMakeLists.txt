@@ -26,6 +26,7 @@ target_sources(pico_sensor_lib INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_shtc3.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_sht3x.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_sht4x.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/i2c_si7021.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_stts22h.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_tmp102.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_tmp117.c
