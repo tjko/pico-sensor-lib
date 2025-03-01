@@ -20,6 +20,7 @@ DPS310|0x77, 0x76|24bit, 0.5C accuracy
 HDC302x|0x44, 0x45, 0x46, 0x47|HDC302x Series Temperature and Humiditysensors (HDC3022, HDC3021, HDC3020)
 LPS22|0x5d, 0x5c|Temperature and Pressure sensor
 LPS25|0x5d, 0x5c|Temperature and Pressure sensor, 2C accuracy
+LPS28|0x5d, 0x5c|Temperature and Pressure sensor, 1.5C accuracy
 MCP9808||13bit, 0.25C accuracy
 MS5611|0x76, 0x77|Temperature and Pressure Sensor|Not found when scanning bus (SYS:I2C:SCAN?)
 MS8607|0x76 and 0x40|Temperature, Humidity and Pressure Sensor|Not found when scanning bus (SYS:I2C:SCAN?), appears as two seprate devices.
