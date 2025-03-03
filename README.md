@@ -8,30 +8,28 @@ This library contains I2C Sensor (drivers) that were initially created for
 
 List of currently supported sensors:
 
-Sensor Type (string)|Possible Addresses|Description|Notes
---------------------|------------------|-----------|-----
-ADT7410|0x48, 0x49, 0x4a, 0x4b|16bit, 0.5C accuracy
-AHT1x||AHT1x (AHT10, AHT11 ,...)
-AHT2x||AHT2x (AHT20, AHT21 ,...)
-AS621x||AS621x series: AS6212 (0.2C), AC6214 (0.4C), AC6218 (0.8C)
-BMP180||16bit, 0.5C accuracy
-BMP280|0x76, 0x77|20bit, 0.5C accuracy
-DPS310|0x77, 0x76|24bit, 0.5C accuracy
-HDC302x|0x44, 0x45, 0x46, 0x47|HDC302x Series Temperature and Humiditysensors (HDC3022, HDC3021, HDC3020)
-LPS22|0x5d, 0x5c|Temperature and Pressure sensor
-LPS25|0x5d, 0x5c|Temperature and Pressure sensor, 2C accuracy
-LPS28|0x5d, 0x5c|Temperature and Pressure sensor, 1.5C accuracy
-MCP9808||13bit, 0.25C accuracy
-MS5611|0x76, 0x77|Temperature and Pressure Sensor|Not found when scanning bus (SYS:I2C:SCAN?)
-MS8607|0x76 and 0x40|Temperature, Humidity and Pressure Sensor|Not found when scanning bus (SYS:I2C:SCAN?), appears as two seprate devices.
-PCT2075||11bit, 1C accuracy
-SHT3x|0x44, 0x34|SHT3x Series Temperature and Humidity sensors (SHT30, SHT31, SHT35)|Not always found when scanning bus (SYS:I2C:SCAN?)
-SHT4x|0x44|SHT4x Series Temperature and Humidity sensors (SHT40, SHT41, SHT43, SHT45)|Not always found when scanning bus (SYS:I2C:SCAN?)
-SHTC3|0x70|Temperature and Humidity sensor, 0.2C accuracy
-SI7021|0x40|Temperature and Humidity sensor, 0.4C accuracy
-STTS22H|0x38, 0x3c, 0x3e, 0x3f|16bit, 0.5C accuracy
-TMP102|0x48, 0x49, 0x4a, 0x4b|12bit, 2C accuracy
-TMP117|0x48, 0x49, 0x4a, 0x4b|16bit, 0.1C accuracy
+Sensor Type|Aliases|Possible Addresses|Description|Notes
+-----------|-------|------------------|-----------|-----
+ADT7410||0x48, 0x49, 0x4a, 0x4b|16bit, 0.5C accuracy
+AHT1x|||AHT1x Series Temperature and Humidity sensors (AHT10, AHT11 ,...)
+AHT2x|||AHT2x Series Temperature and Humidity sensors (AHT20, AHT21 ,...)
+AS621x|AS6212, AS6214, AS6218||AS621x Series sensors: AS6212 (0.2C), AS6214 (0.4C), AC6218 (0.8C)
+BMP180|||16bit, 0.5C accuracy
+BMP280||0x76, 0x77|20bit, 0.5C accuracy
+DPS310||0x77, 0x76|24bit, 0.5C accuracy
+HDC302x|HDC3022, HDC3021, HDC3020|0x44, 0x45, 0x46, 0x47|HDC302x Series Temperature and Humiditysensors
+LPSxx|LPS22, LPS25, LPS28, LPS33, LPS35|0x5d, 0x5c|LPSxx Series Temperature and Pressure sensors
+MCP9808|||13bit, 0.25C accuracy
+MS5611||0x76, 0x77|Temperature and Pressure Sensor|Not found when scanning bus (SYS:I2C:SCAN?)
+MS8607||0x76 and 0x40|Temperature, Humidity and Pressure Sensor|Not found when scanning bus (SYS:I2C:SCAN?), appears as two seprate devices.
+PCT2075|||11bit, 1C accuracy
+SHT3x|SHT30, SHT31, SHT35|0x44, 0x34|SHT3x Series Temperature and Humidity sensors|Not always found when scanning bus (SYS:I2C:SCAN?)
+SHT4x|SHT40, SHT41, SHT43, SHT45|0x44|SHT4x Series Temperature and Humidity sensors|Not always found when scanning bus (SYS:I2C:SCAN?)
+SHTC3||0x70|Temperature and Humidity sensor, 0.2C accuracy
+SI7021||0x40|Temperature and Humidity sensor, 0.4C accuracy
+STTS22H||0x38, 0x3c, 0x3e, 0x3f|16bit, 0.5C accuracy
+TMP102||0x48, 0x49, 0x4a, 0x4b|12bit, 2C accuracy
+TMP117||0x48, 0x49, 0x4a, 0x4b|16bit, 0.1C accuracy
 
 
 ## Usage
