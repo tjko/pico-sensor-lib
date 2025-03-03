@@ -79,20 +79,10 @@ void* hdc302x_init(i2c_inst_t *i2c, uint8_t addr);
 int hdc302x_start_measurement(void *ctx);
 int hdc302x_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
-/* i2c_lps22.c */
-void* lps22_init(i2c_inst_t *i2c, uint8_t addr);
-int lps22_start_measurement(void *ctx);
-int lps22_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
-
-/* i2c_lps25.c */
-void* lps25_init(i2c_inst_t *i2c, uint8_t addr);
-int lps25_start_measurement(void *ctx);
-int lps25_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
-
-/* i2c_lps28.c */
-void* lps28_init(i2c_inst_t *i2c, uint8_t addr);
-int lps28_start_measurement(void *ctx);
-int lps28_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
+/* i2c_lps.c */
+void* lps_init(i2c_inst_t *i2c, uint8_t addr);
+int lps_start_measurement(void *ctx);
+int lps_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_mcp9808.c */
 void* mcp9808_init(i2c_inst_t *i2c, uint8_t addr);
@@ -149,31 +139,63 @@ void* tmp117_init(i2c_inst_t *i2c, uint8_t addr);
 int tmp117_start_measurement(void *ctx);
 int tmp117_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
+
+
+
+static const char* as621x_aliases[] = {
+	"AS6212",
+	"AS6214",
+	"AS6218",
+	NULL
+};
+
+static const char* lps_aliases[] = {
+	"LPS22",
+	"LPS25",
+	"LPS28",
+	"LPS33",
+	"LPS35",
+	NULL
+};
+
+static const char* sht3x_aliases[] = {
+	"SHT30",
+	"SHT31",
+	"SHT35",
+	NULL
+};
+
+static const char* sht4x_aliases[] = {
+	"SHT40",
+	"SHT41",
+	"SHT43",
+	"SHT45",
+	NULL
+};
+
 static const i2c_sensor_entry_t i2c_sensor_types[] = {
-	{ "NONE", NULL, NULL, NULL, NULL, false, 0 }, /* this needs to be first so that valid sensors have index > 0 */
-	{ "ADT7410", adt7410_init, adt7410_start_measurement, adt7410_get_measurement, NULL, false, 1 },
-	{ "AHT1x", aht1x_init, aht_start_measurement, aht_get_measurement, NULL, false, 1 },
-	{ "AHT2x", aht2x_init, aht_start_measurement, aht_get_measurement, NULL, false, 1 },
-	{ "AS621x", as621x_init, as621x_start_measurement, as621x_get_measurement, NULL, false, 1 },
-	{ "BMP180", bmp180_init, bmp180_start_measurement, bmp180_get_measurement, NULL, false, 2 },
-	{ "BMP280", bmp280_init, bmp280_start_measurement, bmp280_get_measurement, NULL, false, 1 },
-	{ "DPS310", dps310_init, dps310_start_measurement, dps310_get_measurement, NULL, false, 1 },
-	{ "HDC302x", hdc302x_init, hdc302x_start_measurement, hdc302x_get_measurement, NULL, false, 1 },
-	{ "LPS22", lps22_init, lps22_start_measurement, lps22_get_measurement, NULL, false, 1 },
-	{ "LPS25", lps25_init, lps25_start_measurement, lps25_get_measurement, NULL, false, 1 },
-	{ "LPS28", lps28_init, lps28_start_measurement, lps28_get_measurement, NULL, false, 1 },
-	{ "MCP9808", mcp9808_init, mcp9808_start_measurement, mcp9808_get_measurement, NULL, false, 1 },
-	{ "MS5611", ms5611_init, ms5611_start_measurement, ms5611_get_measurement, NULL, true, 2 },
-	{ "MS8607", ms8607_init, ms8607_start_measurement, ms8607_get_measurement, NULL, true, 3 },
-	{ "PCT2075", pct2075_init, pct2075_start_measurement, pct2075_get_measurement, NULL, false, 1 },
-	{ "SHTC3", shtc3_init, shtc3_start_measurement, shtc3_get_measurement, NULL, false, 1 },
-	{ "SHT3x", sht3x_init, sht3x_start_measurement, sht3x_get_measurement, NULL, true, 1 },
-	{ "SHT4x", sht4x_init, sht4x_start_measurement, sht4x_get_measurement, NULL, true, 1 },
-	{ "SI7021", si7021_init, si7021_start_measurement, si7021_get_measurement, NULL, false, 1 },
-	{ "STTS22H", stts22h_init, stts22h_start_measurement, stts22h_get_measurement, NULL, false, 1 },
-	{ "TMP102", tmp102_init, tmp102_start_measurement, tmp102_get_measurement, NULL, false, 1 },
-	{ "TMP117", tmp117_init, tmp117_start_measurement, tmp117_get_measurement, NULL, false, 1 },
-	{ NULL, NULL, NULL, NULL, NULL, false, 0 }
+	{ "NONE", NULL, NULL, NULL, NULL, false, 0, NULL  }, /* this needs to be first so that valid sensors have index > 0 */
+	{ "ADT7410", adt7410_init, adt7410_start_measurement, adt7410_get_measurement, NULL, false, 1, NULL },
+	{ "AHT1x", aht1x_init, aht_start_measurement, aht_get_measurement, NULL, false, 1, NULL },
+	{ "AHT2x", aht2x_init, aht_start_measurement, aht_get_measurement, NULL, false, 1, NULL },
+	{ "AS621x", as621x_init, as621x_start_measurement, as621x_get_measurement, NULL, false, 1, as621x_aliases },
+	{ "BMP180", bmp180_init, bmp180_start_measurement, bmp180_get_measurement, NULL, false, 2, NULL },
+	{ "BMP280", bmp280_init, bmp280_start_measurement, bmp280_get_measurement, NULL, false, 1, NULL },
+	{ "DPS310", dps310_init, dps310_start_measurement, dps310_get_measurement, NULL, false, 1, NULL },
+	{ "HDC302x", hdc302x_init, hdc302x_start_measurement, hdc302x_get_measurement, NULL, false, 1, NULL },
+	{ "LPSxx", lps_init, lps_start_measurement, lps_get_measurement, NULL, false, 1, lps_aliases },
+	{ "MCP9808", mcp9808_init, mcp9808_start_measurement, mcp9808_get_measurement, NULL, false, 1, NULL },
+	{ "MS5611", ms5611_init, ms5611_start_measurement, ms5611_get_measurement, NULL, true, 2, NULL },
+	{ "MS8607", ms8607_init, ms8607_start_measurement, ms8607_get_measurement, NULL, true, 3, NULL },
+	{ "PCT2075", pct2075_init, pct2075_start_measurement, pct2075_get_measurement, NULL, false, 1, NULL },
+	{ "SHTC3", shtc3_init, shtc3_start_measurement, shtc3_get_measurement, NULL, false, 1, NULL },
+	{ "SHT3x", sht3x_init, sht3x_start_measurement, sht3x_get_measurement, NULL, true, 1, sht3x_aliases },
+	{ "SHT4x", sht4x_init, sht4x_start_measurement, sht4x_get_measurement, NULL, true, 1, sht4x_aliases },
+	{ "SI7021", si7021_init, si7021_start_measurement, si7021_get_measurement, NULL, false, 1, NULL },
+	{ "STTS22H", stts22h_init, stts22h_start_measurement, stts22h_get_measurement, NULL, false, 1, NULL },
+	{ "TMP102", tmp102_init, tmp102_start_measurement, tmp102_get_measurement, NULL, false, 1, NULL },
+	{ "TMP117", tmp117_init, tmp117_start_measurement, tmp117_get_measurement, NULL, false, 1, NULL },
+	{ NULL, NULL, NULL, NULL, NULL, false, 0, NULL }
 };
 
 #define SENSOR_TYPES_COUNT ((sizeof(i2c_sensor_types) / sizeof(i2c_sensor_entry_t)) - 1)
@@ -563,6 +585,16 @@ uint get_i2c_sensor_type(const char *name)
 		if (!strncasecmp(i2c_sensor_types[i].name, name, len)) {
 			type = i;
 			break;
+		}
+		if (i2c_sensor_types[i].aliases) {
+			int j = 0;
+			while (i2c_sensor_types[i].aliases[j]) {
+				if (!strncasecmp(i2c_sensor_types[i].aliases[j], name, len)) {
+					type = i;
+					break;
+				}
+				j++;
+			}
 		}
 	}
 
