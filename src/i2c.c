@@ -79,6 +79,21 @@ void* hdc302x_init(i2c_inst_t *i2c, uint8_t addr);
 int hdc302x_start_measurement(void *ctx);
 int hdc302x_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
+/* i2c_hts221.c */
+void* hts221_init(i2c_inst_t *i2c, uint8_t addr);
+int hts221_start_measurement(void *ctx);
+int hts221_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
+
+/* i2c_htu21d.c */
+void* htu21d_init(i2c_inst_t *i2c, uint8_t addr);
+int htu21d_start_measurement(void *ctx);
+int htu21d_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
+
+/* i2c_htu31d.c */
+void* htu31d_init(i2c_inst_t *i2c, uint8_t addr);
+int htu31d_start_measurement(void *ctx);
+int htu31d_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
+
 /* i2c_lps.c */
 void* lps_init(i2c_inst_t *i2c, uint8_t addr);
 int lps_start_measurement(void *ctx);
@@ -149,6 +164,13 @@ static const char* as621x_aliases[] = {
 	NULL
 };
 
+static const char* hdc302x_aliases[] = {
+	"HDC3020",
+	"HDC3021",
+	"HDC3022",
+	NULL
+};
+
 static const char* lps_aliases[] = {
 	"LPS22",
 	"LPS25",
@@ -182,7 +204,10 @@ static const i2c_sensor_entry_t i2c_sensor_types[] = {
 	{ "BMP180", bmp180_init, bmp180_start_measurement, bmp180_get_measurement, NULL, false, 2, NULL },
 	{ "BMP280", bmp280_init, bmp280_start_measurement, bmp280_get_measurement, NULL, false, 1, NULL },
 	{ "DPS310", dps310_init, dps310_start_measurement, dps310_get_measurement, NULL, false, 1, NULL },
-	{ "HDC302x", hdc302x_init, hdc302x_start_measurement, hdc302x_get_measurement, NULL, false, 1, NULL },
+	{ "HDC302x", hdc302x_init, hdc302x_start_measurement, hdc302x_get_measurement, NULL, false, 1, hdc302x_aliases },
+	{ "HTS221", hts221_init, hts221_start_measurement, hts221_get_measurement, NULL, false, 1, NULL },
+	{ "HTU21D", htu21d_init, htu21d_start_measurement, htu21d_get_measurement, NULL, true, 2, NULL },
+	{ "HTU31D", htu31d_init, htu31d_start_measurement, htu31d_get_measurement, NULL, false, 1, NULL },
 	{ "LPSxx", lps_init, lps_start_measurement, lps_get_measurement, NULL, false, 1, lps_aliases },
 	{ "MCP9808", mcp9808_init, mcp9808_start_measurement, mcp9808_get_measurement, NULL, false, 1, NULL },
 	{ "MS5611", ms5611_init, ms5611_start_measurement, ms5611_get_measurement, NULL, true, 2, NULL },
