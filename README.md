@@ -19,6 +19,8 @@ BMP280||0x76, 0x77|20bit, 0.5C accuracy
 DPS310||0x77, 0x76|24bit, 0.5C accuracy
 HDC302x|HDC3022, HDC3021, HDC3020|0x44, 0x45, 0x46, 0x47|HDC302x Series Temperature and Humiditysensors
 HTS221||0x5f|Temperature and Humidity sensor
+HTU21D||0x40|Temperature and Humidity Sensor, 0.4C accuracy
+HTU31D||0x40, 0x41|Temperature and Humidity Sensor, 0.3C accuracy
 LPSxx|LPS22, LPS25, LPS28, LPS33, LPS35|0x5d, 0x5c|LPSxx Series Temperature and Pressure sensors
 MCP9808|||13bit, 0.25C accuracy
 MS5611||0x76, 0x77|Temperature and Pressure Sensor|Not found when scanning bus (SYS:I2C:SCAN?)
