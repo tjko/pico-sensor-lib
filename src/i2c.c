@@ -104,6 +104,16 @@ void* mcp9808_init(i2c_inst_t *i2c, uint8_t addr);
 int mcp9808_start_measurement(void *ctx);
 int mcp9808_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
+/* i2c_mpl115a2.c */
+void* mpl115a2_init(i2c_inst_t *i2c, uint8_t addr);
+int mpl115a2_start_measurement(void *ctx);
+int mpl115a2_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
+
+/* i2c_mpl3115a2.c */
+void* mpl3115a2_init(i2c_inst_t *i2c, uint8_t addr);
+int mpl3115a2_start_measurement(void *ctx);
+int mpl3115a2_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
+
 /* i2c_ms5611.c */
 void* ms5611_init(i2c_inst_t *i2c, uint8_t addr);
 int ms5611_start_measurement(void *ctx);
@@ -210,6 +220,8 @@ static const i2c_sensor_entry_t i2c_sensor_types[] = {
 	{ "HTU31D", htu31d_init, htu31d_start_measurement, htu31d_get_measurement, NULL, false, 1, NULL },
 	{ "LPSxx", lps_init, lps_start_measurement, lps_get_measurement, NULL, false, 1, lps_aliases },
 	{ "MCP9808", mcp9808_init, mcp9808_start_measurement, mcp9808_get_measurement, NULL, false, 1, NULL },
+	{ "MPL115A2", mpl115a2_init, mpl115a2_start_measurement, mpl115a2_get_measurement, NULL, false, 1, NULL },
+	{ "MPL3115A2", mpl3115a2_init, mpl3115a2_start_measurement, mpl3115a2_get_measurement, NULL, false, 1, NULL },
 	{ "MS5611", ms5611_init, ms5611_start_measurement, ms5611_get_measurement, NULL, true, 2, NULL },
 	{ "MS8607", ms8607_init, ms8607_start_measurement, ms8607_get_measurement, NULL, true, 3, NULL },
 	{ "PCT2075", pct2075_init, pct2075_start_measurement, pct2075_get_measurement, NULL, false, 1, NULL },

@@ -23,6 +23,8 @@ HTU21D||0x40|Temperature and Humidity Sensor, 0.4C accuracy|Not found when scann
 HTU31D||0x40, 0x41|Temperature and Humidity Sensor, 0.3C accuracy
 LPSxx|LPS22, LPS25, LPS28, LPS33, LPS35|0x5d, 0x5c|LPSxx Series Temperature and Pressure sensors
 MCP9808|||13bit, 0.25C accuracy
+MPL115A2||0x60|Digital Barometer|Temperature sensor not calibrated.
+MPL3115A2||0x60|Temperature and Pressure sensor with Altimetry, 1C accuracy
 MS5611||0x76, 0x77|Temperature and Pressure Sensor|Not found when scanning bus (SYS:I2C:SCAN?)
 MS8607||0x76 and 0x40|Temperature, Humidity and Pressure Sensor|Not found when scanning bus (SYS:I2C:SCAN?), appears as two seprate devices.
 PCT2075|||11bit, 1C accuracy
