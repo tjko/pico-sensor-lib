@@ -13,6 +13,7 @@ Sensor Type|Aliases|Possible Addresses|Description|Notes
 ADT7410||0x48, 0x49, 0x4a, 0x4b|16bit, 0.5C accuracy
 AHT1x|||AHT1x Series Temperature and Humidity sensors (AHT10, AHT11 ,...)
 AHT2x|||AHT2x Series Temperature and Humidity sensors (AHT20, AHT21 ,...)
+AM2320||0x5c|Temperature and Humidity Sensor, 0.5C accuracy|Not found when scannin bus. May not work above 100kHz bus speeds.
 AS621x|AS6212, AS6214, AS6218||AS621x Series sensors: AS6212 (0.2C), AS6214 (0.4C), AC6218 (0.8C)
 BMP180|||16bit, 0.5C accuracy
 BMP280||0x76, 0x77|20bit, 0.5C accuracy
@@ -33,6 +34,7 @@ SHT4x|SHT40, SHT41, SHT43, SHT45|0x44|SHT4x Series Temperature and Humidity sens
 SHTC3||0x70|Temperature and Humidity sensor, 0.2C accuracy
 SI7021||0x40|Temperature and Humidity sensor, 0.4C accuracy
 STTS22H||0x38, 0x3c, 0x3e, 0x3f|16bit, 0.5C accuracy
+TC74|TC74A0|0x48 - 0x4f|Digital Thermal Sensor, 2C accuracy
 TMP102||0x48, 0x49, 0x4a, 0x4b|12bit, 2C accuracy
 TMP117||0x48, 0x49, 0x4a, 0x4b|16bit, 0.1C accuracy
 
