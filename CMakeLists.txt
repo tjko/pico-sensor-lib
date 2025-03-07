@@ -13,6 +13,7 @@ target_sources(pico_sensor_lib INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/src/crc.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_adt7410.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_aht.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/i2c_am2320.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_as621x.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_bmp180.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_bmp280.c
@@ -33,6 +34,7 @@ target_sources(pico_sensor_lib INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_sht4x.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_si7021.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_stts22h.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/i2c_tc74.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_tmp102.c
   ${CMAKE_CURRENT_LIST_DIR}/src/i2c_tmp117.c
 )

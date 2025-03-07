@@ -1,5 +1,5 @@
-/* i2c_pct2075.c
-   Copyright (C) 2024 Timo Kokkonen <tjko@iki.fi>
+/* i2c_tc74.c
+   Copyright (C) 2025 Timo Kokkonen <tjko@iki.fi>
 
    SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -26,22 +26,16 @@
 
 #include "pico_sensor_lib/i2c.h"
 
-/* PCT2075 Registers */
-#define REG_TEMP          0x00
-#define REG_CONFIG        0x01
-#define REG_T_HYST        0x02
-#define REG_T_OS          0x03
-#define REG_T_IDLE        0x04
+
+/* TC74 Registers */
+#define TEMP          0x00
+#define CONFIG        0x01
 
 
-
-
-
-void* pct2075_init(i2c_inst_t *i2c, uint8_t addr)
+void* tc74_init(i2c_inst_t *i2c, uint8_t addr)
 {
-	int res;
-	uint8_t cfg = 0;
 	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
+	uint8_t cfg = 0;
 
 
 	if (!ctx)
@@ -50,32 +44,16 @@ void* pct2075_init(i2c_inst_t *i2c, uint8_t addr)
 	ctx->addr = addr;
 
 	/* Read config register */
-	res  = i2c_read_register_u8(i2c, addr, REG_CONFIG, &cfg);
-	if (res)
+	if (i2c_read_register_u8(i2c, addr, CONFIG, &cfg))
 		goto panic;
 
-	/* High 3bits should always be zero */
-	if ((cfg & 0xe0) != 0)
-		goto panic;
-
-	/* Read T_idle register */
-	res  = i2c_read_register_u8(i2c, addr, REG_T_IDLE, &cfg);
-	if (res)
-		goto panic;
-
-	/* T_idle should default to 1 */
-	if ((cfg & 0x1f) != 1)
+	/* Low 6 bits should always be zero */
+	if ((cfg & 0x3f) != 0)
 		goto panic;
 
 
-	/* Set configuration (to defaults) */
-	res = i2c_write_register_u8(i2c, addr, REG_CONFIG, 0x00);
-	if (res)
-		goto panic;
-
-	/* Set sampling period to 100ms */
-	res = i2c_write_register_u8(i2c, addr, REG_T_IDLE, 0x01);
-	if (res)
+	/* Set sensor to Normal mode */
+	if (i2c_write_register_u8(i2c, addr, CONFIG, 0x00))
 		goto panic;
 
 
@@ -87,28 +65,32 @@ panic:
 }
 
 
-int pct2075_start_measurement(void *ctx)
+int tc74_start_measurement(void *ctx)
 {
 	/* Nothing to do, sensor is in continuous measurement mode... */
 
-	return 100;  /* Measurement should be available after 100ms */
+	return 125;  /* Measurement should be available after 125ms (8 measurements/sec) */
 }
 
 
-int pct2075_get_measurement(void *ctx, float *temp, float *pressure, float *humidity)
+int tc74_get_measurement(void *ctx, float *temp, float *pressure, float *humidity)
 {
 	i2c_sensor_context_t *c = (i2c_sensor_context_t*)ctx;
-	uint16_t meas = 0;
-	int res;
+	int8_t meas = 0;
+	uint8_t cfg;
 
+
+	/* Check Data Ready flag */
+	if (i2c_read_register_u8(c->i2c, c->addr, CONFIG, &cfg))
+		return -1;
+	if (!(cfg & 0x40))
+		return -2;
 
 	/* Get Temperature Measurement */
-	res = i2c_read_register_u16(c->i2c, c->addr, REG_TEMP, &meas);
-	if (res)
-		return -1;
+	if (i2c_read_register_u8(c->i2c, c->addr, TEMP, (uint8_t*)&meas))
+		return -3;
 
-	meas >>= 5;
-	*temp = (double)twos_complement(meas, 11) / 8.0;
+	*temp = (float)meas;
 	*pressure = -1.0;
 	*humidity = -1.0;
 

@@ -91,6 +91,7 @@ int i2c_write_register_u8(i2c_inst_t *i2c, uint8_t addr, uint8_t reg, uint8_t va
 
 int i2c_read_raw(i2c_inst_t *i2c, uint8_t addr, uint8_t *buf, size_t len, bool nostop);
 int i2c_read_raw_u16(i2c_inst_t *i2c, uint8_t addr, uint16_t *val, bool nostop);
+int i2c_write_raw(i2c_inst_t *i2c, uint8_t addr, uint8_t *buf, size_t len, bool nostop);
 int i2c_write_raw_u16(i2c_inst_t *i2c, uint8_t addr, uint16_t val, bool nostop);
 int i2c_write_raw_u8(i2c_inst_t *i2c, uint8_t addr, uint8_t val, bool nostop);
 
