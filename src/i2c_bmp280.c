@@ -63,12 +63,12 @@ typedef struct bmp280_context_t {
 
 
 
-void* bmp280_init(i2c_inst_t *i2c, uint8_t addr)
+void* bmp280_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
 	bmp280_context_t *ctx = calloc(1, sizeof(bmp280_context_t));
 	uint8_t buf[26];
 	uint8_t val = 0;
-	int res;
+
 
 	if (!ctx)
 		return NULL;
@@ -77,34 +77,42 @@ void* bmp280_init(i2c_inst_t *i2c, uint8_t addr)
 
 
 	/* Read and verify device ID */
-	res  = i2c_read_register_u8(i2c, addr, REG_ID, &val);
-	if (res || (val  != BMP280_DEVICE_ID))
+	if (i2c_read_register_u8(i2c, addr, REG_ID, &val)) {
+		*result = -1;
 		goto panic;
+	}
+	if (val != BMP280_DEVICE_ID) {
+		*result = -2;
+		goto panic;
+	}
 
 	/* Reset Sensor */
-	res = i2c_write_register_u8(i2c, addr, REG_RESET, 0xb6);
-	if (res)
+	if (i2c_write_register_u8(i2c, addr, REG_RESET, 0xb6)) {
+		*result = -3;
 		goto panic;
+	}
 
 	/* Wait for sensor to soft reset (reset should take 2ms per datasheet)  */
 	sleep_ms(10);
 
 	/* Set CTRL_MEAS register: oversampling 16x (p)/ 2x (t), normal mode  */
-	res = i2c_write_register_u8(i2c, addr, REG_CTRL_MEAS, 0xab);
-	if (res)
+	if (i2c_write_register_u8(i2c, addr, REG_CTRL_MEAS, 0xab)) {
+		*result = -4;
 		goto panic;
+	}
 
 	/* Set CONFIG register: t_standby = 0.5ms, filter = 16   */
-	res = i2c_write_register_u8(i2c, addr, REG_CONFIG, 0x1c);
-	if (res)
+	if (i2c_write_register_u8(i2c, addr, REG_CONFIG, 0x1c)) {
+		*result = -5;
 		goto panic;
-
+	}
 
 
 	/* Read calibration data */
-	res = i2c_read_register_block(i2c, addr, REG_CALIB, buf, 26, 0);
-	if (res)
+	if (i2c_read_register_block(i2c, addr, REG_CALIB, buf, 26, 0)) {
+		*result = -6;
 		goto panic;
+	}
 
 	ctx->t1 = (buf[0] | (buf[1] << 8));
 	ctx->t2 = (buf[2] | (buf[3] << 8));

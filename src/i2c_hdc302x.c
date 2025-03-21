@@ -75,9 +75,8 @@ static int hdc302x_read_register_u16(i2c_inst_t *i2c, uint8_t addr, uint16_t reg
 
 
 
-void* hdc302x_init(i2c_inst_t *i2c, uint8_t addr)
+void* hdc302x_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
-	int res;
 	uint16_t val = 0;
 	uint64_t serial = 0;
 	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
@@ -88,13 +87,20 @@ void* hdc302x_init(i2c_inst_t *i2c, uint8_t addr)
 	ctx->addr = addr;
 
 	/* Read and verify device ID */
-	res  = hdc302x_read_register_u16(i2c, addr, READ_MANUF_ID, &val);
-	if (res || val != MANUFACTURER_ID)
+	if (hdc302x_read_register_u16(i2c, addr, READ_MANUF_ID, &val)) {
+		*result = -1;
 		goto panic;
+	}
+	if (val != MANUFACTURER_ID) {
+		*result = -2;
+		goto panic;
+	}
 
 	/* Reset Sensor */
-	if ((res = i2c_write_raw_u16(i2c, addr, SOFT_RESET, false)))
+	if (i2c_write_raw_u16(i2c, addr, SOFT_RESET, false)) {
+		*result = -3;
 		goto panic;
+	}
 
 	/* Wait for sensor to soft reset (reset should take max 3ms per datasheet)  */
 	sleep_ms(3);
@@ -102,28 +108,36 @@ void* hdc302x_init(i2c_inst_t *i2c, uint8_t addr)
 
 	/* Read NIST ID */
 	for (int i = 0; i < 3; i++) {
-		if ((res = hdc302x_read_register_u16(i2c, addr, READ_NIST_ID_5_4 + i, &val)))
+		if (hdc302x_read_register_u16(i2c, addr, READ_NIST_ID_5_4 + i, &val)) {
+			*result = -4;
 			goto panic;
+		}
 		serial = (serial << 16) | val;
 	}
 	DEBUG_PRINT("Serial (NIST ID): %12llx\n", serial);
 
 #if 0
 	/* Clear Status Register */
-	if ((res = i2c_write_raw_u16(i2c, addr, CLEAR_STATUS, false)))
+	if (i2c_write_raw_u16(i2c, addr, CLEAR_STATUS, false)) {
+		*result = -4;
 		goto panic;
+	}
 #endif
 
 	/* Read Status Register */
-	if ((res = hdc302x_read_register_u16(i2c, addr, READ_STATUS, &val)))
+	if (hdc302x_read_register_u16(i2c, addr, READ_STATUS, &val)) {
+		*result = -5;
 		goto panic;
+	}
 	DEBUG_PRINT("Status Register: %04x\n", val);
 
 	/* Disable Heater (if needed) */
 	if (val & 0x2000) {
 		DEBUG_PRINT("Disable heater\n");
-		if ((res = i2c_write_raw_u16(i2c, addr, HEATER_OFF, false)))
+		if (i2c_write_raw_u16(i2c, addr, HEATER_OFF, false)) {
+			*result = -6;
 			goto panic;
+		}
 	}
 
 	return ctx;

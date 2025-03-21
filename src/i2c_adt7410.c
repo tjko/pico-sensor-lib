@@ -40,9 +40,8 @@
 
 
 
-void* adt7410_init(i2c_inst_t *i2c, uint8_t addr)
+void* adt7410_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
-	int res;
 	uint8_t val = 0;
 	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
 
@@ -53,31 +52,41 @@ void* adt7410_init(i2c_inst_t *i2c, uint8_t addr)
 	ctx->addr = addr;
 
 	/* Read and verify device ID */
-	res  = i2c_read_register_u8(i2c, addr, REG_ID, &val);
-	if (res || (val & 0xf8) != ADT7410_DEVICE_ID)
+	if (i2c_read_register_u8(i2c, addr, REG_ID, &val)) {
+		*result = -1;
 		goto panic;
+	}
+	if ((val & 0xf8) != ADT7410_DEVICE_ID) {
+		*result = -2;
+		goto panic;
+	}
 
 	/* Reset Sensor */
-	res = i2c_write_raw_u8(i2c, addr, REG_RESET, false);
-	if (res)
+	if (i2c_write_raw_u8(i2c, addr, REG_RESET, false)) {
+		*result = -3;
 		goto panic;
+	}
 
 	/* Wait for sensor to soft reset (reset should take 200us per datasheet)  */
 	sleep_us(250);
 
 	/* Write configuration register */
-	res = i2c_write_register_u8(i2c, addr, REG_CONFIG, 0x80);
-	if (res)
+	if (i2c_write_register_u8(i2c, addr, REG_CONFIG, 0x80)) {
+		*result = -4;
 		goto panic;
+	}
 
 	/* Read configuration register */
-	res = i2c_read_register_u8(i2c, addr, REG_CONFIG, &val);
-	if (res)
+	if (i2c_read_register_u8(i2c, addr, REG_CONFIG, &val)) {
+		*result = -5;
 		goto panic;
+	}
 
 	/* Check that confuration is now as expected... */
-	if (val != 0x80)
+	if (val != 0x80) {
+		*result = -6;
 		goto panic;
+	}
 
 	return ctx;
 

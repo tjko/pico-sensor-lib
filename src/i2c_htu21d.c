@@ -45,9 +45,8 @@ typedef struct htu21d_sensor_context_t {
 } htu21d_sensor_context_t;
 
 
-void* htu21d_init(i2c_inst_t *i2c, uint8_t addr)
+void* htu21d_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
-	int res;
 	uint8_t val = 0;
 	uint8_t new_val;
 	htu21d_sensor_context_t *ctx = calloc(1, sizeof(htu21d_sensor_context_t));
@@ -61,21 +60,27 @@ void* htu21d_init(i2c_inst_t *i2c, uint8_t addr)
 	ctx->humidity = -1.0;
 
 	/* Soft Reset */
-	if ((res = i2c_write_raw_u8(i2c, addr, SOFT_RESET, false)))
+	if (i2c_write_raw_u8(i2c, addr, SOFT_RESET, false)) {
+		*result = -1;
 		goto panic;
+	}
 	sleep_ms(15);
 
 	/* Read Status Register */
-	if ((res  = i2c_read_register_u8(i2c, addr, READ_USER, &val)))
+	if (i2c_read_register_u8(i2c, addr, READ_USER, &val)) {
+		*result = -2;
 		goto panic;
+	}
 	DEBUG_PRINT("Status register: %02x\n", val);
 
 	/* Set resolution 12bits (RH) / 14bits (Temp) */
 	new_val = val & ~(0x81);
 	if (val != new_val) {
 		DEBUG_PRINT("Set status register to: %02x\n", new_val);
-		if ((res = i2c_write_register_u8(i2c, addr, WRITE_USER, new_val)))
+		if (i2c_write_register_u8(i2c, addr, WRITE_USER, new_val)) {
+			*result = -3;
 			goto panic;
+		}
 	}
 
 	return ctx;

@@ -44,133 +44,133 @@
 
 
 /* i2c_adt7410.c */
-void* adt7410_init(i2c_inst_t *i2c, uint8_t addr);
+void* adt7410_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int adt7410_start_measurement(void *ctx);
 int adt7410_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_aht.c */
-void* aht1x_init(i2c_inst_t *i2c, uint8_t addr);
-void* aht2x_init(i2c_inst_t *i2c, uint8_t addr);
+void* aht1x_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
+void* aht2x_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int aht_start_measurement(void *ctx);
 int aht_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_am2320.c */
-void* am2320_init(i2c_inst_t *i2c, uint8_t addr);
+void* am2320_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int am2320_start_measurement(void *ctx);
 int am2320_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_as621x.c */
-void* as621x_init(i2c_inst_t *i2c, uint8_t addr);
+void* as621x_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int as621x_start_measurement(void *ctx);
 int as621x_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_bmp180.c */
-void* bmp180_init(i2c_inst_t *i2c, uint8_t addr);
+void* bmp180_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int bmp180_start_measurement(void *ctx);
 int bmp180_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_bmp280.c */
-void* bmp280_init(i2c_inst_t *i2c, uint8_t addr);
+void* bmp280_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int bmp280_start_measurement(void *ctx);
 int bmp280_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_dps310.c */
-void* dps310_init(i2c_inst_t *i2c, uint8_t addr);
+void* dps310_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int dps310_start_measurement(void *ctx);
 int dps310_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_hdc302x.c */
-void* hdc302x_init(i2c_inst_t *i2c, uint8_t addr);
+void* hdc302x_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int hdc302x_start_measurement(void *ctx);
 int hdc302x_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_hts221.c */
-void* hts221_init(i2c_inst_t *i2c, uint8_t addr);
+void* hts221_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int hts221_start_measurement(void *ctx);
 int hts221_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_htu21d.c */
-void* htu21d_init(i2c_inst_t *i2c, uint8_t addr);
+void* htu21d_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int htu21d_start_measurement(void *ctx);
 int htu21d_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_htu31d.c */
-void* htu31d_init(i2c_inst_t *i2c, uint8_t addr);
+void* htu31d_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int htu31d_start_measurement(void *ctx);
 int htu31d_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_lps.c */
-void* lps_init(i2c_inst_t *i2c, uint8_t addr);
+void* lps_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int lps_start_measurement(void *ctx);
 int lps_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_mcp9808.c */
-void* mcp9808_init(i2c_inst_t *i2c, uint8_t addr);
+void* mcp9808_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int mcp9808_start_measurement(void *ctx);
 int mcp9808_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_mpl115a2.c */
-void* mpl115a2_init(i2c_inst_t *i2c, uint8_t addr);
+void* mpl115a2_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int mpl115a2_start_measurement(void *ctx);
 int mpl115a2_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_mpl3115a2.c */
-void* mpl3115a2_init(i2c_inst_t *i2c, uint8_t addr);
+void* mpl3115a2_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int mpl3115a2_start_measurement(void *ctx);
 int mpl3115a2_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_ms5611.c */
-void* ms5611_init(i2c_inst_t *i2c, uint8_t addr);
+void* ms5611_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int ms5611_start_measurement(void *ctx);
 int ms5611_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_ms8607.c */
-void* ms8607_init(i2c_inst_t *i2c, uint8_t addr);
+void* ms8607_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int ms8607_start_measurement(void *ctx);
 int ms8607_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_pct2075.c */
-void* pct2075_init(i2c_inst_t *i2c, uint8_t addr);
+void* pct2075_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int pct2075_start_measurement(void *ctx);
 int pct2075_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_shtc3.c */
-void* shtc3_init(i2c_inst_t *i2c, uint8_t addr);
+void* shtc3_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int shtc3_start_measurement(void *ctx);
 int shtc3_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_sht3x.c */
-void* sht3x_init(i2c_inst_t *i2c, uint8_t addr);
+void* sht3x_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int sht3x_start_measurement(void *ctx);
 int sht3x_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_sht4x.c */
-void* sht4x_init(i2c_inst_t *i2c, uint8_t addr);
+void* sht4x_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int sht4x_start_measurement(void *ctx);
 int sht4x_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_si7021.c */
-void* si7021_init(i2c_inst_t *i2c, uint8_t addr);
+void* si7021_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int si7021_start_measurement(void *ctx);
 int si7021_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_stts22h.c */
-void* stts22h_init(i2c_inst_t *i2c, uint8_t addr);
+void* stts22h_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int stts22h_start_measurement(void *ctx);
 int stts22h_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_tc74.c */
-void* tc74_init(i2c_inst_t *i2c, uint8_t addr);
+void* tc74_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int tc74_start_measurement(void *ctx);
 int tc74_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_tmp102.c */
-void* tmp102_init(i2c_inst_t *i2c, uint8_t addr);
+void* tmp102_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int tmp102_start_measurement(void *ctx);
 int tmp102_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 /* i2c_tmp117.c */
-void* tmp117_init(i2c_inst_t *i2c, uint8_t addr);
+void* tmp117_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int tmp117_start_measurement(void *ctx);
 int tmp117_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
@@ -266,6 +266,7 @@ void i2c_sensor_baudrate(uint baudrate)
 int i2c_init_sensor(uint8_t sensor_type, i2c_inst_t *i2c_bus, uint8_t addr, void **ctx)
 {
 	uint8_t buf[2];
+	int16_t res = 0;
 
 	if (sensor_type < 1 || sensor_type >= SENSOR_TYPES_COUNT ||
 		!ctx || i2c_reserved_address(addr))
@@ -279,8 +280,8 @@ int i2c_init_sensor(uint8_t sensor_type, i2c_inst_t *i2c_bus, uint8_t addr, void
 	}
 
 	/* Initialize sensor */
-	if (!(*ctx = i2c_sensor_types[sensor_type].init(i2c_bus, addr)))
-		return -3;
+	if (!(*ctx = i2c_sensor_types[sensor_type].init(i2c_bus, addr, &res)))
+		return (res - 100);
 
 	((i2c_sensor_context_t*)(*ctx))->sensor_type = sensor_type;
 
@@ -425,7 +426,7 @@ int i2c_read_register_u24(i2c_inst_t *i2c, uint8_t addr, uint8_t reg, uint32_t *
 	res = i2c_read_register_block(i2c, addr, reg, buf, sizeof(buf), 0);
 	if (res) {
 		DEBUG_PRINT("failed to read register\n");
-		return -1;
+		return res;
 	}
 
 	*val = (buf[0] << 16) | (buf[1] << 8) | buf[2];
@@ -444,7 +445,7 @@ int i2c_read_register_u16(i2c_inst_t *i2c, uint8_t addr, uint8_t reg, uint16_t *
 	res = i2c_read_register_block(i2c, addr, reg, buf, sizeof(buf), 0);
 	if (res) {
 		DEBUG_PRINT("failed to read register\n");
-		return -1;
+		return res;
 	}
 
 	*val = (buf[0] << 8) | buf[1];
@@ -463,7 +464,7 @@ int i2c_read_register_u8(i2c_inst_t *i2c, uint8_t addr, uint8_t reg, uint8_t *va
 	res = i2c_read_register_block(i2c, addr, reg, buf, sizeof(buf), 0);
 	if (res) {
 		DEBUG_PRINT("failed to read register\n");
-		return -1;
+		return res;
 	}
 
 	*val = buf[0];

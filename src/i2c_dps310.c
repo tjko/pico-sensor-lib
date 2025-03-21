@@ -67,9 +67,8 @@ typedef struct dps310_context_t {
 
 
 
-void* dps310_init(i2c_inst_t *i2c, uint8_t addr)
+void* dps310_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
-	int res;
 	uint8_t val = 0;
 	uint8_t buf[18];
 	uint8_t coef_source;
@@ -84,58 +83,77 @@ void* dps310_init(i2c_inst_t *i2c, uint8_t addr)
 	ctx->pressure = -1.0;
 
 	/* Read and verify device ID */
-	res  = i2c_read_register_u8(i2c, addr, REG_ID, &val);
-	if (res || (val & 0x0f) != (DPS310_DEVICE_ID & 0x0f))
+	if (i2c_read_register_u8(i2c, addr, REG_ID, &val)) {
+		*result = -1;
 		goto panic;
+	}
+	if ((val & 0x0f) != (DPS310_DEVICE_ID & 0x0f)) {
+		*result = -2;
+		goto panic;
+	}
 	/* Revision ID should greater than zero... */
-	if (val >> 4 == 0)
+	if (val >> 4 == 0) {
+		*result = -3;
 		goto panic;
+	}
 
 
 	/* Reset Sensor */
-	res = i2c_write_register_u8(i2c, addr, REG_RESET, 0x89);
-	if (res)
+	if (i2c_write_register_u8(i2c, addr, REG_RESET, 0x89)) {
+		*result = -4;
 		goto panic;
+	}
 
 	/* Wait for sensor to soft reset (reset should take 40ms per datasheet)  */
 	sleep_ms(40);
 
 	/* Get coefficient source */
-	res = i2c_read_register_u8(i2c, addr, REG_COEF_SRCE, &val);
-	if (res)
+	if (i2c_read_register_u8(i2c, addr, REG_COEF_SRCE, &val)) {
+		*result = -5;
 		goto panic;
+	}
 	coef_source = (val >> 7);
 
 
 	/* Write configuration registers */
 
 	// 4 pressure measruementes per second, 64 times oversampling
-	res = i2c_write_register_u8(i2c, addr, REG_PRS_CFG, 0x26);
-	if (res)
+	if (i2c_write_register_u8(i2c, addr, REG_PRS_CFG, 0x26)) {
+		*result = -6;
 		goto panic;
+	}
 	// 4 temp measurements per second, 64 times oversampling
-	res = i2c_write_register_u8(i2c, addr, REG_TMP_CFG, (coef_source << 7) | 0x26);
-	if (res)
+	if (i2c_write_register_u8(i2c, addr, REG_TMP_CFG, (coef_source << 7) | 0x26)) {
+		*result = -7;
 		goto panic;
+	}
 	// enable continuous pressure and temperature measurement
-	res = i2c_write_register_u8(i2c, addr, REG_MEAS_CFG, 0x07);
-	if (res)
+	if (i2c_write_register_u8(i2c, addr, REG_MEAS_CFG, 0x07)) {
+		*result = -8;
 		goto panic;
+	}
 	// enable pressure result bit-shift and temperature result bit-shift
-	res = i2c_write_register_u8(i2c, addr, REG_CFG, 0x0c);
-	if (res)
+	if (i2c_write_register_u8(i2c, addr, REG_CFG, 0x0c)) {
+		*result = -9;
 		goto panic;
+	}
 
 
 	/* Get sensor status and check COEF_RDY bit */
-	res  = i2c_read_register_u8(i2c, addr, REG_MEAS_CFG, &val);
-	if (res || (val & 0x80) == 0)
+	if (i2c_read_register_u8(i2c, addr, REG_MEAS_CFG, &val)) {
+		*result = -10;
 		goto panic;
+	}
+	if ((val & 0x80) == 0) {
+		*result = -11;
+		goto panic;
+	}
 
 	/* Read calibration coefficients */
-	res = i2c_read_register_block(i2c, addr, REG_COEF, buf, 18, 0);
-	if (res)
+	if (i2c_read_register_block(i2c, addr, REG_COEF, buf, 18, 0)) {
+		*result = -12;
 		goto panic;
+	}
 
 	ctx->c0 = twos_complement((buf[0] << 4) | (buf[1] >> 4), 12);
 	DEBUG_PRINT("c0 = %08x %d\n", ctx->c0, ctx->c0);

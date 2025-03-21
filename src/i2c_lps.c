@@ -112,9 +112,9 @@ static const struct sensor_models models[] = {
 };
 
 
-void* lps_init(i2c_inst_t *i2c, uint8_t addr)
+void* lps_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
-	int res, idx;
+	int idx;
 	const uint8_t *cmds;
 	uint8_t reg;
 	uint8_t val = 0;
@@ -126,8 +126,10 @@ void* lps_init(i2c_inst_t *i2c, uint8_t addr)
 	ctx->addr = addr;
 
 	/* Read and verify device ID */
-	if ((res  = i2c_read_register_u8(i2c, addr, WHO_AM_I, &val)))
+	if (i2c_read_register_u8(i2c, addr, WHO_AM_I, &val)) {
+		*result = -1;
 		goto panic;
+	}
 
 	/* Check if this is a sensor supported by this driver... */
 	idx = 0;
@@ -140,29 +142,35 @@ void* lps_init(i2c_inst_t *i2c, uint8_t addr)
 		}
 		idx++;
 	}
-	if (!ctx->id)
+	if (!ctx->id) {
+		*result = -2;
 		goto panic;
+	}
 
 	/* Reset Sensor */
 	reg = (ctx->id == LPS25_DEVICE_ID ? LPS25_CTRL_REG2 : CTRL_REG2);
 
-	res = i2c_write_register_u8(i2c, addr, reg, 0x04); // SWRESET
-	if (res)
+	if (i2c_write_register_u8(i2c, addr, reg, 0x04)) { // SWRESET
+		*result = -3;
 		goto panic;
+	}
 	sleep_us(5);
-	res = i2c_write_register_u8(i2c, addr, reg, 0x80); // BOOT
-	if (res)
+	if (i2c_write_register_u8(i2c, addr, reg, 0x80)) { // BOOT
+		*result = -4;
 		goto panic;
+	}
 	sleep_us(2300);
 
 	/* Read configuration register */
-	res = i2c_read_register_u8(i2c, addr, reg, &val);
-	if (res)
+	if (i2c_read_register_u8(i2c, addr, reg, &val)) {
+		*result = -5;
 		goto panic;
+	}
 	/* Check that boot is complete */
-	if (val & 0x80)
+	if (val & 0x80) {
+		*result = -6;
 		goto panic;
-
+	}
 
 	/* Configure Sensor */
 	cmds = models[idx].init_cmds;
@@ -170,8 +178,10 @@ void* lps_init(i2c_inst_t *i2c, uint8_t addr)
 		reg = *cmds++;
 		val = *cmds++;
 		DEBUG_PRINT("Init: reg%02x = %02x\n", reg, val);
-		if ((res = i2c_write_register_u8(i2c, addr, reg, val)))
+		if (i2c_write_register_u8(i2c, addr, reg, val)) {
+			*result = -7;
 			goto panic;
+		}
 	}
 
 	return ctx;

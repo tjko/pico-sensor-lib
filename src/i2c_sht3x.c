@@ -72,9 +72,8 @@ static int sht3x_read_u16(i2c_inst_t *i2c, uint8_t addr, uint16_t *val, bool nos
 }
 
 
-void* sht3x_init(i2c_inst_t *i2c, uint8_t addr)
+void* sht3x_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
-	int res;
 	uint16_t val = 0;
 	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
 
@@ -85,33 +84,39 @@ void* sht3x_init(i2c_inst_t *i2c, uint8_t addr)
 
 
 	/* Read status register to verify correct device... */
-	res = i2c_write_raw_u16(i2c, addr, CMD_STATUS, false);
-	if (res)
+	if (i2c_write_raw_u16(i2c, addr, CMD_STATUS, false)) {
+		*result = -1;
 		goto panic;
+	}
 	sleep_us(10);
-	res = sht3x_read_u16(i2c, addr, &val, false);
-	if (res)
+	if (sht3x_read_u16(i2c, addr, &val, false)) {
+		*result = -2;
 		goto panic;
-	if ((val & 0x500c) != 0)
+	}
+	if ((val & 0x500c) != 0) {
+		*result = -3;
 		goto panic;
+	}
 
 
 	/* Reset sensor */
-	res = i2c_write_raw_u16(i2c, addr, CMD_RESET, false);
-	if (res)
+	if (i2c_write_raw_u16(i2c, addr, CMD_RESET, false)) {
+		*result = -4;
 		goto panic;
+	}
 	sleep_us(1500);
 
 
 	/* Read status register again... */
-	res = i2c_write_raw_u16(i2c, addr, CMD_STATUS, false);
-	if (res)
+	if (i2c_write_raw_u16(i2c, addr, CMD_STATUS, false)) {
+		*result = -5;
 		goto panic;
+	}
 	sleep_us(10);
-	res = sht3x_read_u16(i2c, addr, &val, false);
-	if (res)
+	if (sht3x_read_u16(i2c, addr, &val, false)) {
+		*result = -6;
 		goto panic;
-
+	}
 
 	return ctx;
 

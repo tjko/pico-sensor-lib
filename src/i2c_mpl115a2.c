@@ -48,10 +48,9 @@ typedef struct mpl115a2_sensor_context_t {
 
 
 
-void* mpl115a2_init(i2c_inst_t *i2c, uint8_t addr)
+void* mpl115a2_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
 	mpl115a2_sensor_context_t *ctx = calloc(1, sizeof(mpl115a2_sensor_context_t));
-	int res;
 	uint8_t buf[8];
 
 	if (!ctx)
@@ -60,8 +59,10 @@ void* mpl115a2_init(i2c_inst_t *i2c, uint8_t addr)
 	ctx->addr = addr;
 
 	/* Read Calibration Data */
-	if ((res = i2c_read_register_block(i2c, addr, READ_COEF, buf , sizeof(buf), false)))
+	if (i2c_read_register_block(i2c, addr, READ_COEF, buf , sizeof(buf), false)) {
+		*result = -1;
 		goto panic;
+	}
 
 	ctx->a0 = (buf[0] << 8) | buf[1];
 	ctx->b1 = (buf[2] << 8) | buf[3];

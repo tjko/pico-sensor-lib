@@ -33,9 +33,8 @@
 #define REG_T_HIGH       0x03
 
 
-void* tmp102_init(i2c_inst_t *i2c, uint8_t addr)
+void* tmp102_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
-	int res;
 	uint16_t val = 0;
 	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
 
@@ -46,44 +45,57 @@ void* tmp102_init(i2c_inst_t *i2c, uint8_t addr)
 
 
 	/* Verify configuration register read-only bits */
-	res  = i2c_read_register_u16(i2c, addr, REG_CONFIG, &val);
-	if (res || ((val & 0x600f) != 0x6000))
+	if (i2c_read_register_u16(i2c, addr, REG_CONFIG, &val)) {
+		*result = -1;
 		goto panic;
+	}
+	if ((val & 0x600f) != 0x6000) {
+		*result = -2;
+		goto panic;
+	}
 
 	/* Try to detect device by T_HIGH and T_LOW register default values (80C and 75C) */
 
-	res  = i2c_read_register_u16(i2c, addr, REG_T_HIGH, &val);
-	if (res)
+	if (i2c_read_register_u16(i2c, addr, REG_T_HIGH, &val)) {
+		*result = -3;
 		goto panic;
+	}
 	val = twos_complement((val >> 4), 12) / 16;
 	DEBUG_PRINT("T_high = %d\n", val);
 	if (val != 80)
 		goto panic;
 
-	res  = i2c_read_register_u16(i2c, addr, REG_T_LOW, &val);
-	if (res)
+	if (i2c_read_register_u16(i2c, addr, REG_T_LOW, &val)) {
+		*result = -4;
 		goto panic;
+	}
 	val = twos_complement((val >> 4), 12) / 16;
 	DEBUG_PRINT("T_low = %d\n", val);
-	if (val != 75)
+	if (val != 75) {
+		*result = -5;
 		goto panic;
+	}
 
 
 	/* Set sensor configuration: enable EM mode */
-	res = i2c_write_register_u16(i2c, addr, REG_CONFIG, 0x00b0);
-	if (res)
+	if (i2c_write_register_u16(i2c, addr, REG_CONFIG, 0x00b0)) {
+		*result = -6;
 		goto panic;
+	}
 
 	sleep_us(100);
 
 	/* Read configuration register */
-	res = i2c_read_register_u16(i2c, addr, REG_CONFIG, &val);
-	if (res)
+	if (i2c_read_register_u16(i2c, addr, REG_CONFIG, &val)) {
+		*result = -7;
 		goto panic;
+	}
 
 	/* Check that confuration is now as expected (excluding read-only bits R1/R0)... */
-	if ((val & 0x9fff) != 0x00b0)
+	if ((val & 0x9fff) != 0x00b0) {
+		*result = -8;
 		goto panic;
+	}
 
 	return ctx;
 

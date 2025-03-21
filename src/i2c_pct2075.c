@@ -37,9 +37,8 @@
 
 
 
-void* pct2075_init(i2c_inst_t *i2c, uint8_t addr)
+void* pct2075_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
-	int res;
 	uint8_t cfg = 0;
 	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
 
@@ -50,34 +49,39 @@ void* pct2075_init(i2c_inst_t *i2c, uint8_t addr)
 	ctx->addr = addr;
 
 	/* Read config register */
-	res  = i2c_read_register_u8(i2c, addr, REG_CONFIG, &cfg);
-	if (res)
+	if (i2c_read_register_u8(i2c, addr, REG_CONFIG, &cfg)) {
+		*result = -1;
 		goto panic;
-
+	}
 	/* High 3bits should always be zero */
-	if ((cfg & 0xe0) != 0)
+	if ((cfg & 0xe0) != 0) {
+		*result = -2;
 		goto panic;
+	}
 
 	/* Read T_idle register */
-	res  = i2c_read_register_u8(i2c, addr, REG_T_IDLE, &cfg);
-	if (res)
+	if (i2c_read_register_u8(i2c, addr, REG_T_IDLE, &cfg)) {
+		*result = -3;
 		goto panic;
-
+	}
 	/* T_idle should default to 1 */
-	if ((cfg & 0x1f) != 1)
+	if ((cfg & 0x1f) != 1) {
+		*result = -4;
 		goto panic;
+	}
 
 
 	/* Set configuration (to defaults) */
-	res = i2c_write_register_u8(i2c, addr, REG_CONFIG, 0x00);
-	if (res)
+	if (i2c_write_register_u8(i2c, addr, REG_CONFIG, 0x00)) {
+		*result = -5;
 		goto panic;
+	}
 
 	/* Set sampling period to 100ms */
-	res = i2c_write_register_u8(i2c, addr, REG_T_IDLE, 0x01);
-	if (res)
+	if (i2c_write_register_u8(i2c, addr, REG_T_IDLE, 0x01)) {
+		*result = -6;
 		goto panic;
-
+	}
 
 	return ctx;
 

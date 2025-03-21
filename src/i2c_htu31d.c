@@ -61,9 +61,8 @@ static int read_diagnostics(i2c_inst_t *i2c, uint8_t addr, uint8_t *diag)
 }
 
 
-void* htu31d_init(i2c_inst_t *i2c, uint8_t addr)
+void* htu31d_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
-	int res;
 	uint8_t buf[4], crc, diag;
 	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
 
@@ -73,35 +72,43 @@ void* htu31d_init(i2c_inst_t *i2c, uint8_t addr)
 	ctx->addr = addr;
 
 	/* Read Serial Number */
-	if ((res = i2c_read_register_block(i2c, addr, READ_SERIAL,
-							buf, sizeof(buf), 0)))
+	if (i2c_read_register_block(i2c, addr, READ_SERIAL, buf, sizeof(buf), 0)) {
+		*result = -1;
 		goto panic;
+	}
 	crc = crc8_generic(buf, 3, 0x31, 0x00, 0x00, false, false);
 	DEBUG_PRINT("Serial: %02x%02x%02x %02x (crc=%02x)\n",
 		buf[0], buf[1], buf[2], buf[3], crc);
-	if (buf[3] != crc)
-		goto panic;
-
-	/* Soft Reset */
-	if ((res = i2c_write_raw_u8(i2c, addr, SOFT_RESET, false)))
-		goto panic;
-	sleep_ms(15);
-
-	/* Read Diagnostics Register */
-	if (read_diagnostics(i2c, addr, &diag))
-		goto panic;
-
-	if (diag & 0x80) {
-		/* NVM failure */
-		DEBUG_PRINT("NVM error\n");
+	if (buf[3] != crc) {
+		*result = -2;
 		goto panic;
 	}
 
+	/* Soft Reset */
+	if (i2c_write_raw_u8(i2c, addr, SOFT_RESET, false)) {
+		*result = -3;
+		goto panic;
+	}
+	sleep_ms(15);
+
+	/* Read Diagnostics Register */
+	if (read_diagnostics(i2c, addr, &diag)) {
+		*result = -4;
+		goto panic;
+	}
+	if (diag & 0x80) {
+		/* NVM failure */
+		DEBUG_PRINT("NVM error\n");
+		*result = -5;
+		goto panic;
+	}
 	if ((diag & 0x01)) {
 		/* Turn off heater */
 		DEBUG_PRINT("Turn OFF heater\n");
-		if ((res = i2c_write_raw_u8(i2c, addr, HEATER_OFF, false)))
+		if (i2c_write_raw_u8(i2c, addr, HEATER_OFF, false)) {
+			*result = -6;
 			goto panic;
+		}
 	}
 
 	return ctx;

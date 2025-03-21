@@ -78,11 +78,11 @@ static uint8_t crc4_pt(const uint16_t prom[])
 }
 
 
-void* ms5611_init(i2c_inst_t *i2c, uint8_t addr)
+void* ms5611_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
 	ms5611_context_t *ctx = calloc(1, sizeof(ms5611_context_t));
 	uint8_t crc;
-	int res;
+
 
 	if (!ctx)
 		return NULL;
@@ -95,18 +95,20 @@ void* ms5611_init(i2c_inst_t *i2c, uint8_t addr)
 
 
 	/* Reset Sensor */
-	res = i2c_write_raw_u8(ctx->i2c, ctx->addr, RESET, false);
-	if (res)
+	if (i2c_write_raw_u8(ctx->i2c, ctx->addr, RESET, false)) {
+		*result = -1;
 		goto panic;
+	}
 	sleep_ms(10);
 
 
 	/* Read PROM */
 	for (uint8_t i = 0; i < 8; i++) {
-		res = i2c_read_register_u16(ctx->i2c, ctx->addr, PROM_READ + (i << 1),
-					&ctx->prom_pt[i]);
-		if (res)
+		if (i2c_read_register_u16(ctx->i2c, ctx->addr, PROM_READ + (i << 1),
+						&ctx->prom_pt[i])) {
+			*result = -2;
 			goto panic;
+		}
 		sleep_us(100);
 	}
 	DEBUG_PRINT("C1=%u\n", ctx->prom_pt[1]);
@@ -117,8 +119,10 @@ void* ms5611_init(i2c_inst_t *i2c, uint8_t addr)
 	DEBUG_PRINT("C6=%u\n", ctx->prom_pt[6]);
 	crc = crc4_pt(ctx->prom_pt);
 	DEBUG_PRINT("PROM CRC-4: %02x (%02x)\n", crc, ctx->prom_pt[7] & 0x000f);
-	if (crc != (ctx->prom_pt[7] & 0x000f))
+	if (crc != (ctx->prom_pt[7] & 0x000f)) {
+		*result = -3;
 		goto panic;
+	}
 
 	return ctx;
 

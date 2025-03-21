@@ -47,9 +47,8 @@
 
 
 
-void* si7021_init(i2c_inst_t *i2c, uint8_t addr)
+void* si7021_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
-	int res;
 	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
 	uint8_t buf[8], c, user_reg, ctrl_reg;
 	uint64_t serial;
@@ -61,10 +60,14 @@ void* si7021_init(i2c_inst_t *i2c, uint8_t addr)
 
 
 	/* Read Serial Number (Part 1) */
-	if ((res = i2c_write_raw_u16(i2c, addr, CMD_READ_ID_1, true)))
+	if (i2c_write_raw_u16(i2c, addr, CMD_READ_ID_1, true)) {
+		*result = -1;
 		goto panic;
-	if ((res = i2c_read_raw(i2c, addr, buf, 8, false)))
+	}
+	if (i2c_read_raw(i2c, addr, buf, 8, false)) {
+		*result = -2;
 		goto panic;
+	}
 
 	/* Validate checksums */
 	c = 0;
@@ -72,28 +75,38 @@ void* si7021_init(i2c_inst_t *i2c, uint8_t addr)
 		c = crc8_byte(c, buf[i * 2], 0x31);
 		DEBUG_PRINT("SNA_%d=%02x, CRC=%02x (%02x)\n",
 			3 - i, buf[i * 2], buf[i * 2 + 1], c);
-		if (c != buf[i * 2 + 1])
+		if (c != buf[i * 2 + 1]) {
+			*result = -3;
 			goto panic;
+		}
 	}
 	serial = ((uint64_t)buf[0] << 56) | ((uint64_t)buf[2] << 48)
 		| ((uint64_t)buf[4] << 40) | ((uint64_t)buf[6] << 32);
 
 
 	/* Read Serial Number (Part 2) */
-	if ((res = i2c_write_raw_u16(i2c, addr, CMD_READ_ID_2, true)))
+	if (i2c_write_raw_u16(i2c, addr, CMD_READ_ID_2, true)) {
+		*result = -4;
 		goto panic;
-	if ((res = i2c_read_raw(i2c, addr, buf, 6, false)))
+	}
+	if (i2c_read_raw(i2c, addr, buf, 6, false)) {
+		*result = -5;
 		goto panic;
+	}
 
 	/* Validate checksums */
 	c = crc8_generic(&buf[0], 2, 0x31, 0x00, 0x00, false, false);
 	DEBUG_PRINT("SNB_3=%02x, SNB_2=%02x CRC=%02x (%02x)\n", buf[0], buf[1], buf[2], c);
-	if (c != buf[2])
+	if (c != buf[2]) {
+		*result = -6;
 		goto panic;
+	}
 	c = crc8_generic(&buf[3], 2, 0x31, c, 0x00, false, false);
 	DEBUG_PRINT("SNB_1=%02x, SNB_0=%02x CRC=%02x (%02x)\n", buf[3], buf[4], buf[5], c);
-	if (c != buf[5])
+	if (c != buf[5]) {
+		*result = -7;
 		goto panic;
+	}
 
 	serial |= (buf[0] << 24) | (buf[1] << 16) | (buf[3] << 8) | buf[4];
 	DEBUG_PRINT("Serial number: %16llx\n", serial);
@@ -103,23 +116,30 @@ void* si7021_init(i2c_inst_t *i2c, uint8_t addr)
 	c = (serial >> 24) & 0xff;
 	if (c != SI7021_DEVICE_ID) {
 		DEBUG_PRINT("Unknown device ID: %02x\n", c);
+		*result = -8;
 		goto panic;
 	}
 	DEBUG_PRINT("Device Model: 70%02d\n", c);
 
 
 	/* Reset Sensor */
-	if ((res = i2c_write_raw_u8(i2c, addr, CMD_RESET, false)))
+	if (i2c_write_raw_u8(i2c, addr, CMD_RESET, false)) {
+		*result = -9;
 		goto panic;
+	}
 	sleep_ms(15);
 
 	/* Read User Register */
-	if ((res = i2c_read_register_u8(i2c, addr, CMD_READ_USER_REG, &user_reg)))
+	if (i2c_read_register_u8(i2c, addr, CMD_READ_USER_REG, &user_reg)) {
+		*result = -10;
 		goto panic;
+	}
 
 	/* Read Control Register */
-	if ((res = i2c_read_register_u8(i2c, addr, CMD_READ_CTRL_REG, &ctrl_reg)))
+	if (i2c_read_register_u8(i2c, addr, CMD_READ_CTRL_REG, &ctrl_reg)) {
+		*result = -11;
 		goto panic;
+	}
 
 	DEBUG_PRINT("User register: %02x\n", user_reg);
 	DEBUG_PRINT("Control register: %02x\n", ctrl_reg);
@@ -130,11 +150,15 @@ void* si7021_init(i2c_inst_t *i2c, uint8_t addr)
 	user_reg &= ~0x04; // Clear HTRE bit (disable header)
 	ctrl_reg &= ~0x0f; // Clear HEATER[3:0] (Set heater to lowest setting).
 
-	if ((res = i2c_write_register_u8(i2c, addr, CMD_WRITE_CTRL_REG, ctrl_reg)))
+	if (i2c_write_register_u8(i2c, addr, CMD_WRITE_CTRL_REG, ctrl_reg)) {
+		*result = -12;
 		goto panic;
+	}
 	DEBUG_PRINT("Set User register: %02x\n", user_reg);
-	if ((res = i2c_write_register_u8(i2c, addr, CMD_WRITE_USER_REG, user_reg)))
+	if (i2c_write_register_u8(i2c, addr, CMD_WRITE_USER_REG, user_reg)) {
+		*result = -13;
 		goto panic;
+	}
 	DEBUG_PRINT("Set Control register: %02x\n", ctrl_reg);
 
 	return ctx;

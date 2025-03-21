@@ -36,9 +36,8 @@
 #define AS621X_DEVICE_ID 0x117
 
 
-void* as621x_init(i2c_inst_t *i2c, uint8_t addr)
+void* as621x_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
-	int res;
 	uint16_t val = 0;
 	int16_t temp;
 	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
@@ -51,45 +50,59 @@ void* as621x_init(i2c_inst_t *i2c, uint8_t addr)
 
 	/* Check that configuration register reserved bits are set as expected for AS621x */
 
-	res = i2c_read_register_u16(i2c, addr, REG_CONFIG, &val);
-	if (res || (val & 0x601f) != 0x4000)
+	if (i2c_read_register_u16(i2c, addr, REG_CONFIG, &val)) {
+		*result = -1;
 		goto panic;
+	}
+	if ((val & 0x601f) != 0x4000) {
+		*result = -2;
+		goto panic;
+	}
 
 
 	/* Try to detect device by T_HIGH and T_LOW register default values (80C and 75C) */
 
-	res  = i2c_read_register_u16(i2c, addr, REG_T_HIGH, &val);
-	if (res)
+	if (i2c_read_register_u16(i2c, addr, REG_T_HIGH, &val)) {
+		*result = -3;
 		goto panic;
+	}
 	temp = (int16_t)val / 128;
 	DEBUG_PRINT("T_high = %d\n", temp);
-	if (temp != 80)
+	if (temp != 80) {
+		*result = -4;
 		goto panic;
+	}
 
-	res  = i2c_read_register_u16(i2c, addr, REG_T_LOW, &val);
-	if (res)
+	if (i2c_read_register_u16(i2c, addr, REG_T_LOW, &val)) {
+		*result = -5;
 		goto panic;
+	}
 	temp = (int16_t)val / 128;
 	DEBUG_PRINT("T_low = %d\n", temp);
-	if (temp != 75)
+	if (temp != 75) {
+		*result = -6;
 		goto panic;
+	}
 
 
 	/* Set sensor configuration: continuous measruements at 4Hz */
-	res = i2c_write_register_u16(i2c, addr, REG_CONFIG, 0x00a0);
-	if (res)
+	if (i2c_write_register_u16(i2c, addr, REG_CONFIG, 0x00a0)) {
+		*result = -7;
 		goto panic;
-
+	}
 	sleep_us(100);
 
 	/* Read configuration register */
-	res = i2c_read_register_u16(i2c, addr, REG_CONFIG, &val);
-	if (res)
+	if (i2c_read_register_u16(i2c, addr, REG_CONFIG, &val)) {
+		*result = -8;
 		goto panic;
+	}
 
 	/* Check that confuration is now as expected (excluding read-only reserved bits)... */
-	if ((val & 0x9fe0) != 0x00a0)
+	if ((val & 0x9fe0) != 0x00a0) {
+		*result = -9;
 		goto panic;
+	}
 
 	return ctx;
 

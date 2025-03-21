@@ -127,11 +127,11 @@ static uint8_t crc4_rh(const uint16_t prom[])
 #endif
 
 
-void* ms8607_init(i2c_inst_t *i2c, uint8_t addr)
+void* ms8607_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
 	ms8607_context_t *ctx = calloc(1, sizeof(ms8607_context_t));
 	uint8_t crc, reg;
-	int res;
+
 
 	if (!ctx)
 		return NULL;
@@ -146,21 +146,24 @@ void* ms8607_init(i2c_inst_t *i2c, uint8_t addr)
 
 
 	/* Reset P&T and RH Sensor */
-	res = i2c_write_raw_u8(ctx->i2c, ctx->addr, RESET_PT, false);
-	if (res)
+	if (i2c_write_raw_u8(ctx->i2c, ctx->addr, RESET_PT, false)) {
+		*result = -1;
 		goto panic;
-	res = i2c_write_raw_u8(ctx->i2c, ctx->addr2, RESET_RH, false);
-	if (res)
+	}
+	if (i2c_write_raw_u8(ctx->i2c, ctx->addr2, RESET_RH, false)) {
+		*result = -2;
 		goto panic;
+	}
 	sleep_ms(15);
 
 
 	/* Read P&T PROM */
 	for (int i = 0; i < 7; i++) {
-		res = i2c_read_register_u16(ctx->i2c, ctx->addr, PROM_READ + (i * 2),
-					&ctx->prom_pt[i]);
-		if (res)
+		if (i2c_read_register_u16(ctx->i2c, ctx->addr, PROM_READ + (i * 2),
+						&ctx->prom_pt[i])) {
+			*result = -3;
 			goto panic;
+		}
 		sleep_ms(1);
 	}
 	DEBUG_PRINT("C1=%u\n", ctx->prom_pt[1]);
@@ -171,16 +174,19 @@ void* ms8607_init(i2c_inst_t *i2c, uint8_t addr)
 	DEBUG_PRINT("C6=%u\n", ctx->prom_pt[6]);
 	crc = crc4_pt(ctx->prom_pt);
 	DEBUG_PRINT("PT PROM CRC-4: %02x (%02x)\n", crc, ctx->prom_pt[0] >> 12);
-	if (crc != (ctx->prom_pt[0] >> 12))
+	if (crc != (ctx->prom_pt[0] >> 12)) {
+		*result = -4;
 		goto panic;
+	}
 
 #if 0
 	/* Read RH PROM */
 	for (int i = 0; i < 7; i++) {
-		res = i2c_read_register_u16(ctx->i2c, ctx->addr2, PROM_READ + (i * 2),
-					&ctx->prom_rh[i]);
-		if (res)
+		if (i2c_read_register_u16(ctx->i2c, ctx->addr2, PROM_READ + (i * 2),
+						&ctx->prom_rh[i])) {
+			*result = -5;
 			goto panic;
+		}
 		sleep_ms(5);
 	}
 	for (int i = 0; i < 7; i++) {
@@ -188,22 +194,26 @@ void* ms8607_init(i2c_inst_t *i2c, uint8_t addr)
 	}
 	crc = crc4_rh(ctx->prom_rh);
 	DEBUG_PRINT("RH PROM CRC-4: %02x (%02x)\n", crc, ctx->prom_rh[6] & 0x0f);
-	if (crc != (ctx->prom_rh[6] & 0x0f))
+	if (crc != (ctx->prom_rh[6] & 0x0f)) {
+		*result = -6;
 		goto panic;
+	}
 #endif
 
 	/* Read User Register */
-	res = i2c_read_register_u8(ctx->i2c, ctx->addr2, READ_USER, &reg);
-	if (res)
+	if (i2c_read_register_u8(ctx->i2c, ctx->addr2, READ_USER, &reg)) {
+		*result = -7;
 		goto panic;
+	}
 	DEBUG_PRINT("Current User Register value: %02x\n", reg);
 
 	/* Update User Register if needed */
 	if (reg != (reg & 0x7a)) {
 		reg = (reg &0x7a);
-		res = i2c_write_register_u8(ctx->i2c, ctx->addr2, WRITE_USER, reg);
-		if (res)
+		if (i2c_write_register_u8(ctx->i2c, ctx->addr2, WRITE_USER, reg)) {
+			*result = -8;
 			goto panic;
+		}
 		DEBUG_PRINT("User register changed to: %02x\n", reg);
 	}
 

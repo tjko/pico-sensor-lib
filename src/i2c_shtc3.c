@@ -52,8 +52,7 @@ static int shtc3_read_u16(i2c_inst_t *i2c, uint8_t addr, uint16_t *val, bool nos
 
 	DEBUG_PRINT("args=%p,%02x,%p\n", i2c, addr, val);
 
-	res = i2c_read_raw(i2c, addr, buf, 3, nostop);
-	if (res) {
+	if ((res = i2c_read_raw(i2c, addr, buf, 3, nostop))) {
 		DEBUG_PRINT("read failed (%d)\n", res);
 		return -1;
 	}
@@ -71,9 +70,8 @@ static int shtc3_read_u16(i2c_inst_t *i2c, uint8_t addr, uint16_t *val, bool nos
 }
 
 
-void* shtc3_init(i2c_inst_t *i2c, uint8_t addr)
+void* shtc3_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
-	int res;
 	uint16_t val = 0;
 	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
 
@@ -84,34 +82,43 @@ void* shtc3_init(i2c_inst_t *i2c, uint8_t addr)
 
 
 	/* Read and verify device ID */
-	res = i2c_write_raw_u16(i2c, addr, CMD_ID, false);
-	if (res)
+	if (i2c_write_raw_u16(i2c, addr, CMD_ID, false)) {
+		*result = -1;
 		goto panic;
+	}
 	sleep_us(10);
-	res = shtc3_read_u16(i2c, addr, &val, false);
-	if (res)
+	if (shtc3_read_u16(i2c, addr, &val, false)) {
+		*result = -2;
 		goto panic;
-	if ((val & SHTC3_DEVICE_ID_MASK) != SHTC3_DEVICE_ID)
+	}
+	if ((val & SHTC3_DEVICE_ID_MASK) != SHTC3_DEVICE_ID) {
+		*result = -3;
 		goto panic;
+	}
 
 
 	/* Reset sensor */
-	res = i2c_write_raw_u16(i2c, addr, CMD_RESET, false);
-	if (res)
+	if (i2c_write_raw_u16(i2c, addr, CMD_RESET, false)) {
+		*result = -4;
 		goto panic;
+	}
 	sleep_us(250);
 
 
 	/* Read and verify device ID again... */
-	res = i2c_write_raw_u16(i2c, addr, CMD_ID, false);
-	if (res)
+	if (i2c_write_raw_u16(i2c, addr, CMD_ID, false)) {
+		*result = -5;
 		goto panic;
+	}
 	sleep_us(10);
-	res = shtc3_read_u16(i2c, addr, &val, false);
-	if (res)
+	if (shtc3_read_u16(i2c, addr, &val, false)) {
+		*result = -6;
 		goto panic;
-	if ((val & SHTC3_DEVICE_ID_MASK) != SHTC3_DEVICE_ID)
+	}
+	if ((val & SHTC3_DEVICE_ID_MASK) != SHTC3_DEVICE_ID) {
+		*result = -7;
 		goto panic;
+	}
 
 	return ctx;
 

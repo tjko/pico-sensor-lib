@@ -42,9 +42,8 @@
 
 
 
-void* mcp9808_init(i2c_inst_t *i2c, uint8_t addr)
+void* mcp9808_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
-	int res;
 	uint16_t val = 0;
 	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
 
@@ -55,25 +54,37 @@ void* mcp9808_init(i2c_inst_t *i2c, uint8_t addr)
 	ctx->addr = addr;
 
 	/* Read and verify manufacturer ID */
-	res  = i2c_read_register_u16(i2c, addr, REG_MANUF_ID, &val);
-	if (res || (val != MCP9808_MANUF_ID))
+	if (i2c_read_register_u16(i2c, addr, REG_MANUF_ID, &val)) {
+		*result = -1;
 		goto panic;
+	}
+	if (val != MCP9808_MANUF_ID) {
+		*result = -2;
+		goto panic;
+	}
 
 	/* Read and verify device ID */
-	res  = i2c_read_register_u16(i2c, addr, REG_DEVICE_ID, &val);
-	if (res || ((val >> 8) != MCP9808_DEVICE_ID))
+	if (i2c_read_register_u16(i2c, addr, REG_DEVICE_ID, &val)) {
+		*result = -3;
 		goto panic;
+	}
+	if ((val >> 8) != MCP9808_DEVICE_ID) {
+		*result = -4;
+		goto panic;
+	}
 
 
 	/* Set sensor configuration */
-	res = i2c_write_register_u16(i2c, addr, REG_CONFIG, 0x0000);
-	if (res)
+	if (i2c_write_register_u16(i2c, addr, REG_CONFIG, 0x0000)) {
+		*result = -5;
 		goto panic;
+	}
 
 	/* Set resolution */
-	res = i2c_write_register_u8(i2c, addr, REG_CONFIG, 0x03);
-	if (res)
+	if (i2c_write_register_u8(i2c, addr, REG_CONFIG, 0x03)) {
+		*result = -6;
 		goto panic;
+	}
 
 
 	return ctx;

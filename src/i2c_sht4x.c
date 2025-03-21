@@ -42,11 +42,11 @@ static inline uint8_t crc8(uint8_t *buf, size_t len)
 }
 
 
-void* sht4x_init(i2c_inst_t *i2c, uint8_t addr)
+void* sht4x_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
 	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
 	uint8_t buf[6];
-	int res;
+
 
 	if (!ctx)
 		return NULL;
@@ -56,13 +56,15 @@ void* sht4x_init(i2c_inst_t *i2c, uint8_t addr)
 	memset(buf, 0, sizeof(buf));
 
 	/* Read and verify device serial */
-	res = i2c_read_register_block(i2c, addr, CMD_READ_SERIAL, buf, sizeof(buf), 1000);
-	if (res)
+	if (i2c_read_register_block(i2c, addr, CMD_READ_SERIAL, buf, sizeof(buf), 1000)) {
+		*result = -1;
 		goto panic;
+	}
 
 	/* Check CRC of received values */
 	if ((crc8(&buf[0], 2) != buf[2]) || (crc8(&buf[3], 2) != buf[5])) {
 		DEBUG_PRINT("invalid serial (CRC mismatch)\n");
+		*result = -2;
 		goto panic;
 	}
 #if I2C_DEBUG > 0
@@ -71,20 +73,23 @@ void* sht4x_init(i2c_inst_t *i2c, uint8_t addr)
 #endif
 
 	/* Reset sensor */
-	res = i2c_write_raw_u8(i2c, addr, CMD_SOFT_RESET, false);
-	if (res)
+	if (i2c_write_raw_u8(i2c, addr, CMD_SOFT_RESET, false)) {
+		*result = -3;
 		goto panic;
+	}
 	sleep_us(1000);
 
 
 	/* Read and verify device serial again */
-	res = i2c_read_register_block(i2c, addr, CMD_READ_SERIAL, buf, sizeof(buf), 1000);
-	if (res)
+	if (i2c_read_register_block(i2c, addr, CMD_READ_SERIAL, buf, sizeof(buf), 1000)) {
+		*result = -4;
 		goto panic;
+	}
 
 	/* Check CRC of received values */
 	if ((crc8(&buf[0], 2) != buf[2]) || (crc8(&buf[3], 2) != buf[5])) {
 		DEBUG_PRINT("invalid serial (CRC mismatch)\n");
+		*result = -5;
 		goto panic;
 	}
 

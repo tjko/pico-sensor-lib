@@ -32,7 +32,7 @@
 #define CONFIG        0x01
 
 
-void* tc74_init(i2c_inst_t *i2c, uint8_t addr)
+void* tc74_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
 	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
 	uint8_t cfg = 0;
@@ -44,17 +44,23 @@ void* tc74_init(i2c_inst_t *i2c, uint8_t addr)
 	ctx->addr = addr;
 
 	/* Read config register */
-	if (i2c_read_register_u8(i2c, addr, CONFIG, &cfg))
+	if (i2c_read_register_u8(i2c, addr, CONFIG, &cfg)) {
+		*result = -1;
 		goto panic;
+	}
 
 	/* Low 6 bits should always be zero */
-	if ((cfg & 0x3f) != 0)
+	if ((cfg & 0x3f) != 0) {
+		*result = -2;
 		goto panic;
+	}
 
 
 	/* Set sensor to Normal mode */
-	if (i2c_write_register_u8(i2c, addr, CONFIG, 0x00))
+	if (i2c_write_register_u8(i2c, addr, CONFIG, 0x00)) {
+		*result = -3;
 		goto panic;
+	}
 
 
 	return ctx;

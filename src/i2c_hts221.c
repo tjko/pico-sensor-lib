@@ -54,9 +54,9 @@ typedef struct hts221_sensor_context_t {
 
 
 
-void* hts221_init(i2c_inst_t *i2c, uint8_t addr)
+void* hts221_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
-	int res;
+	int res, retries;
 	uint8_t val = 0;
 	hts221_sensor_context_t *ctx = calloc(1, sizeof(hts221_sensor_context_t));
 	uint8_t buf[16];
@@ -67,25 +67,42 @@ void* hts221_init(i2c_inst_t *i2c, uint8_t addr)
 	ctx->addr = addr;
 
 	/* Read and verify device ID */
-	res  = i2c_read_register_u8(i2c, addr, WHO_AM_I, &val);
-	if (res || val != HTS221_DEVICE_ID)
+	retries = 3;
+	do {
+		res = i2c_read_register_u8(i2c, addr, WHO_AM_I, &val);
+	} while (res && retries-- > 0);
+	if (res) {
+		*result = -1;
 		goto panic;
+	}
+	if (val != HTS221_DEVICE_ID) {
+		*result = -2;
+		goto panic;
+	}
 
 	/* Reset Sensor */
-	if ((res = i2c_write_register_u8(i2c, addr, CTRL_REG2, 0x80))) // BOOT
+	if (i2c_write_register_u8(i2c, addr, CTRL_REG2, 0x80)) { // BOOT
+		*result = -3;
 		goto panic;
+	}
 	sleep_ms(5);
 
 	/* Read configuration register */
-	if ((res = i2c_read_register_u8(i2c, addr, CTRL_REG2, &val)))
+	if (i2c_read_register_u8(i2c, addr, CTRL_REG2, &val)) {
+		*result = -4;
 		goto panic;
+	}
 	/* Check that boot is complete */
-	if (val & 0x80)
+	if (val & 0x80) {
+		*result = -5;
 		goto panic;
+	}
 
 	/* Read Calibration Data */
-	if ((res = i2c_read_register_block(i2c, addr, CALIB_DATA | 0x80, buf , sizeof(buf), false)))
+	if (i2c_read_register_block(i2c, addr, CALIB_DATA | 0x80, buf , sizeof(buf), false)) {
+		*result = -6;
 		goto panic;
+	}
 
 	uint8_t H0_rH_x2 = buf[0];
 	uint8_t H1_rH_x2 = buf[1];
@@ -111,12 +128,16 @@ void* hts221_init(i2c_inst_t *i2c, uint8_t addr)
 	DEBUG_PRINT("T0_OUT / T1_OUT = %d / %d\n", T0_OUT, T1_OUT);
 
 	/* Set resolution: AVGT=64, AVGH=64 */
-	if ((res = i2c_write_register_u8(i2c, addr, AV_CONF, 0x2c)))
+	if (i2c_write_register_u8(i2c, addr, AV_CONF, 0x2c)) {
+		*result = -7;
 		goto panic;
+	}
 
 	/* Set active mode and ODR 12.5Hz */
-	if ((res = i2c_write_register_u8(i2c, addr, CTRL_REG1, 0x83)))
+	if (i2c_write_register_u8(i2c, addr, CTRL_REG1, 0x83)) {
+		*result = -8;
 		goto panic;
+	}
 
 	return ctx;
 

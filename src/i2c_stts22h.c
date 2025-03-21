@@ -39,9 +39,8 @@
 
 
 
-void* stts22h_init(i2c_inst_t *i2c, uint8_t addr)
+void* stts22h_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
-	int res;
 	uint8_t val = 0;
 	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
 
@@ -51,26 +50,37 @@ void* stts22h_init(i2c_inst_t *i2c, uint8_t addr)
 	ctx->addr = addr;
 
 	/* Read and verify device ID */
-	res  = i2c_read_register_u8(i2c, addr, REG_DEVICE_ID, &val);
-	if (res || val != STTS22H_DEVICE_ID)
+	if (i2c_read_register_u8(i2c, addr, REG_DEVICE_ID, &val)) {
+		*result = -1;
 		goto panic;
+	}
+	if (val != STTS22H_DEVICE_ID) {
+		*result = -2;
+		goto panic;
+	}
 
 	/* Configure Sensor: set to defaults first */
-	res = i2c_write_register_u8(i2c, addr, REG_CTRL, 0x00);
-	if (res)
+	if (i2c_write_register_u8(i2c, addr, REG_CTRL, 0x00)) {
+		*result = -3;
 		goto panic;
-
+	}
 	sleep_us(10);
 
 	/* Configure Sensor: avg=00, if_add_inc=1, freerun=1 */
-	res = i2c_write_register_u8(i2c, addr, REG_CTRL, 0x0c);
-	if (res)
+	if (i2c_write_register_u8(i2c, addr, REG_CTRL, 0x0c)) {
+		*result = -4;
 		goto panic;
+	}
 
 	/* Read and check configuration register */
-	res = i2c_read_register_u8(i2c, addr, REG_CTRL, &val);
-	if (res | (val != 0x0c))
+	if (i2c_read_register_u8(i2c, addr, REG_CTRL, &val)) {
+		*result = -5;
 		goto panic;
+	}
+	if (val != 0x0c) {
+		*result = -6;
+		goto panic;
+	}
 
 	return ctx;
 

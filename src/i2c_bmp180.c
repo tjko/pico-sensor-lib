@@ -64,12 +64,12 @@ typedef struct bmp180_context_t {
 
 
 
-void* bmp180_init(i2c_inst_t *i2c, uint8_t addr)
+void* bmp180_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
 	bmp180_context_t *ctx = calloc(1, sizeof(bmp180_context_t));
 	uint8_t buf[22];
 	uint8_t val = 0;
-	int res;
+
 
 	if (!ctx)
 		return NULL;
@@ -80,23 +80,30 @@ void* bmp180_init(i2c_inst_t *i2c, uint8_t addr)
 	ctx->pressure = -1;
 
 	/* Read and verify device ID */
-	res  = i2c_read_register_u8(i2c, addr, REG_ID, &val);
-	if (res || (val  != BMP180_DEVICE_ID))
+	if (i2c_read_register_u8(i2c, addr, REG_ID, &val)) {
+		*result = -1;
 		goto panic;
+	}
+	if (val != BMP180_DEVICE_ID) {
+		*result = -2;
+		goto panic;
+	}
 
 	/* Reset Sensor */
-	res = i2c_write_register_u8(i2c, addr, REG_RESET, 0xb6);
-	if (res)
+	if (i2c_write_register_u8(i2c, addr, REG_RESET, 0xb6)) {
+		*result = -3;
 		goto panic;
+	}
 
 	/* Wait for sensor to soft reset (reset should take 2ms per datasheet)  */
 	sleep_ms(10);
 
 
 	/* Read calibration data */
-	res = i2c_read_register_block(i2c, addr, REG_CALIB, buf, 22, 0);
-	if (res)
+	if (i2c_read_register_block(i2c, addr, REG_CALIB, buf, 22, 0)) {
+		*result = -4;
 		goto panic;
+	}
 
 	ctx->ac1 = (buf[0] << 8) | buf[1];
 	ctx->ac2 = (buf[2] << 8) | buf[3];

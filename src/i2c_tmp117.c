@@ -35,9 +35,8 @@
 
 
 
-void* tmp117_init(i2c_inst_t *i2c, uint8_t addr)
+void* tmp117_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
-	int res;
 	uint16_t val = 0;
 	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
 
@@ -47,26 +46,35 @@ void* tmp117_init(i2c_inst_t *i2c, uint8_t addr)
 	ctx->addr = addr;
 
 	/* Read and verify device ID */
-	res  = i2c_read_register_u16(i2c, addr, TMP117_REG_DEVICE_ID, &val);
-	if (res || val != TMP117_DEVICE_ID)
+	if (i2c_read_register_u16(i2c, addr, TMP117_REG_DEVICE_ID, &val)) {
+		*result = -1;
 		goto panic;
+	}
+	if (val != TMP117_DEVICE_ID) {
+		*result = -2;
+		goto panic;
+	}
 
 	/* Reset Sensor */
-	res = i2c_write_register_u16(i2c, addr, TMP117_REG_CONFIG, 0x0222);
-	if (res)
+	if (i2c_write_register_u16(i2c, addr, TMP117_REG_CONFIG, 0x0222)) {
+		*result = -3;
 		goto panic;
+	}
 
 	/* Wait for sensor to soft reset (reset should take 2ms per datasheet)  */
 	sleep_us(2500);
 
 	/* Read configuration register */
-	res = i2c_read_register_u16(i2c, addr, TMP117_REG_CONFIG, &val);
-	if (res)
+	if (i2c_read_register_u16(i2c, addr, TMP117_REG_CONFIG, &val)) {
+		*result = -4;
 		goto panic;
+	}
 
 	/* Check that confuration is now as expected... */
-	if ((val & 0x0FFC) != 0x0220)
+	if ((val & 0x0FFC) != 0x0220) {
+		*result = -5;
 		goto panic;
+	}
 
 	return ctx;
 

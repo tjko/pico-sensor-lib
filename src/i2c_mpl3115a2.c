@@ -48,7 +48,7 @@
 #define MPL3115A2_DEVICE_ID 0xc4
 
 
-void* mpl3115a2_init(i2c_inst_t *i2c, uint8_t addr)
+void* mpl3115a2_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
 	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
 	int res;
@@ -61,14 +61,20 @@ void* mpl3115a2_init(i2c_inst_t *i2c, uint8_t addr)
 	ctx->addr = addr;
 
 	/* Read Device ID */
-	if ((res = i2c_read_register_u8(i2c, addr, WHO_AM_I, &val)))
+	if (i2c_read_register_u8(i2c, addr, WHO_AM_I, &val)) {
+		*result = -1;
 		goto panic;
-	if (val != MPL3115A2_DEVICE_ID)
+	}
+	if (val != MPL3115A2_DEVICE_ID) {
+		*result = -2;
 		goto panic;
+	}
 
 	/* Reset Sensor */
-	if ((res = i2c_write_register_u8(i2c, addr, CTRL_REG1, 0x04)))
+	if (i2c_write_register_u8(i2c, addr, CTRL_REG1, 0x04)) {
+		*result = -3;
 		goto panic;
+	}
 	sleep_ms(1);
 	while (1) {
 		if ((res = i2c_read_register_u8(i2c, addr, CTRL_REG1, &val))) {
@@ -78,26 +84,36 @@ void* mpl3115a2_init(i2c_inst_t *i2c, uint8_t addr)
 			if ((val & 0x04) == 0)
 				break;
 		}
-		if (count++ >= 10)
+		if (count++ >= 10) {
+			*result = -4;
 			goto panic;
+		}
 		sleep_ms(5);
 	}
 
 	/* Disable FIFO */
-	if ((res = i2c_write_register_u8(i2c, addr, F_SETUP, 0x00)))
+	if (i2c_write_register_u8(i2c, addr, F_SETUP, 0x00)) {
+		*result = -5;
 		goto panic;
+	}
 
 	/* Set Barometer mode with oversampling ratio 128 */
-	if ((res = i2c_write_register_u8(i2c, addr, CTRL_REG1, 0x38)))
+	if (i2c_write_register_u8(i2c, addr, CTRL_REG1, 0x38)) {
+		*result = -6;
 		goto panic;
+	}
 
 	/* Enable event flags */
-	if ((res = i2c_write_register_u8(i2c, addr, PT_DATA_CFG, 0x07)))
+	if (i2c_write_register_u8(i2c, addr, PT_DATA_CFG, 0x07)) {
+		*result = -7;
 		goto panic;
+	}
 
 	/* Activate sensor */
-	if ((res = i2c_write_register_u8(i2c, addr, CTRL_REG1, 0x39)))
+	if (i2c_write_register_u8(i2c, addr, CTRL_REG1, 0x39)) {
+		*result = -8;
 		goto panic;
+	}
 
 	return ctx;
 

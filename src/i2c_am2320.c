@@ -123,10 +123,11 @@ static int am2320_read_registers(i2c_inst_t *i2c, uint8_t addr, uint8_t reg, uin
 }
 
 
-void* am2320_init(i2c_inst_t *i2c, uint8_t addr)
+void* am2320_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
 	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
 	uint8_t buf[4 + 4];
+	int res;
 
 	if (!ctx)
 		return NULL;
@@ -134,8 +135,10 @@ void* am2320_init(i2c_inst_t *i2c, uint8_t addr)
 	ctx->addr = addr;
 
 	/* Try reading a humidity and temperature measurement. */
-	if (am2320_read_registers(i2c, addr, HUM_MSB, 4, buf, true))
+	if ((res = am2320_read_registers(i2c, addr, HUM_MSB, 4, buf, true))) {
+		*result = res;
 		goto panic;
+	}
 
 	return ctx;
 

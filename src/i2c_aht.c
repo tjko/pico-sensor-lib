@@ -50,9 +50,8 @@ static inline uint8_t aht_crc8(uint8_t *buf, uint len)
 }
 
 
-static void* aht_init(i2c_inst_t *i2c, uint8_t addr, uint8_t type)
+static void* aht_init(i2c_inst_t *i2c, uint8_t addr, uint8_t type, int16_t *result)
 {
-	int res;
 	uint8_t buf[2];
 	aht_context_t *ctx = calloc(1, sizeof(aht_context_t));
 
@@ -63,28 +62,32 @@ static void* aht_init(i2c_inst_t *i2c, uint8_t addr, uint8_t type)
 	ctx->type = type;
 
 	/* Reset sensor*/
-	res = i2c_write_raw_u8(i2c, addr, AHT_REG_RESET, false);
-	if (res)
+	if (i2c_write_raw_u8(i2c, addr, AHT_REG_RESET, false)) {
+		*result = -1;
 		goto panic;
+	}
 
 	/* Wait for sensor to soft reset (should be done in 20ms?)  */
 	sleep_us(25000);
 
 	/* Write initialization register: set normal mode */
-	res = i2c_write_register_u16(i2c, addr,
-				(type == 1 ? AHT1_REG_INIT : AHT2_REG_INIT),
-				0x0800);
-	if (res)
+	if (i2c_write_register_u16(i2c, addr, (type == 1 ? AHT1_REG_INIT : AHT2_REG_INIT),
+					0x0800)) {
+		*result = -2;
 		goto panic;
+	}
 
 	/* Read status register */
-	res = i2c_read_register_u8(i2c, addr, AHT_REG_STATUS, buf);
-	if (res)
+	if (i2c_read_register_u8(i2c, addr, AHT_REG_STATUS, buf)) {
+		*result = -3;
 		goto panic;
+	}
 
 	/* Check that calibration bit is on */
-	if ((buf[0] & 0x08) == 0)
+	if ((buf[0] & 0x08) == 0) {
+		*result = -4;
 		goto panic;
+	}
 
 	return ctx;
 
@@ -94,15 +97,15 @@ panic:
 }
 
 
-void* aht1x_init(i2c_inst_t *i2c, uint8_t addr, uint8_t type)
+void* aht1x_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
-	return aht_init(i2c, addr, 1);
+	return aht_init(i2c, addr, 1, result);
 }
 
 
-void* aht2x_init(i2c_inst_t *i2c, uint8_t addr, uint8_t type)
+void* aht2x_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
-	return aht_init(i2c, addr, 2);
+	return aht_init(i2c, addr, 2, result);
 }
 
 

@@ -49,7 +49,7 @@ extern "C"
 
 
 
-typedef void* (i2c_init_func_t)(i2c_inst_t *i2c, uint8_t addr);
+typedef void* (i2c_init_func_t)(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 typedef int (i2c_start_measurement_func_t)(void *ctx);
 typedef int (i2c_get_measurement_func_t)(void *ctx, float *temp, float *pressure, float *humidity);
 typedef int (i2c_shutdown_func_t)(void *ctx);
