@@ -1,5 +1,5 @@
 /* i2c_dps310.c
-   Copyright (C) 2024 Timo Kokkonen <tjko@iki.fi>
+   Copyright (C) 2024-2026 Timo Kokkonen <tjko@iki.fi>
 
    SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -41,16 +41,19 @@
 #define REG_FIFO_STS      0x0b
 #define REG_RESET         0x0c
 #define REG_ID            0x0d
-#define REG_COEF          0x10 // 0x10 - 0x21 (18 bytes to read)
+#define REG_COEF          0x10 // DPS310: 0x10 - 0x21 (18 bytes to read)
+                               // SPA06: 0x11 - 0x24 (21 bytes to read)
 #define REG_COEF_SRCE     0x28
 
 
 #define DPS310_DEVICE_ID  0x10  // revision id [7:4], product id [3:0]
+#define SPA06_DEVICE_ID   0x11
 
 #define SCALE_FACTOR 1040384  // 64 times oversampling (high precision)
 
 typedef struct dps310_context_t {
 	struct { I2C_SENSOR_CONTEXT_MEMBERS };
+	uint8_t dev_id;
 	float temp;
 	float pressure;
 	// Calibration Coefficients
@@ -63,16 +66,18 @@ typedef struct dps310_context_t {
 	int16_t c20;
 	int16_t c21;
 	int16_t c30;
+	int16_t c31; // SPA06 only
+	int16_t c40; // SPA06 only
 } dps310_context_t;
 
 
 
-void* dps310_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
+static void* sensor_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result, uint8_t sensor_id)
 {
 	uint8_t val = 0;
-	uint8_t buf[18];
-	uint8_t coef_source;
+	uint8_t coef_source = 0;
 	dps310_context_t *ctx = calloc(1, sizeof(dps310_context_t));
+	uint8_t buf[21];
 
 
 	if (!ctx)
@@ -82,21 +87,17 @@ void* dps310_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 	ctx->temp = 0.0;
 	ctx->pressure = -1.0;
 
+
 	/* Read and verify device ID */
 	if (i2c_read_register_u8(i2c, addr, REG_ID, &val)) {
 		*result = -1;
 		goto panic;
 	}
-	if ((val & 0x0f) != (DPS310_DEVICE_ID & 0x0f)) {
+	if (val != sensor_id) {
 		*result = -2;
 		goto panic;
 	}
-	/* Revision ID should greater than zero... */
-	if (val >> 4 == 0) {
-		*result = -3;
-		goto panic;
-	}
-
+	ctx->dev_id = val;
 
 	/* Reset Sensor */
 	if (i2c_write_register_u8(i2c, addr, REG_RESET, 0x89)) {
@@ -108,11 +109,13 @@ void* dps310_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 	sleep_ms(40);
 
 	/* Get coefficient source */
-	if (i2c_read_register_u8(i2c, addr, REG_COEF_SRCE, &val)) {
-		*result = -5;
-		goto panic;
+	if (ctx->dev_id == DPS310_DEVICE_ID) {
+		if (i2c_read_register_u8(i2c, addr, REG_COEF_SRCE, &val)) {
+			*result = -5;
+			goto panic;
+		}
+		coef_source = (val >> 7);
 	}
-	coef_source = (val >> 7);
 
 
 	/* Write configuration registers */
@@ -150,7 +153,8 @@ void* dps310_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 	}
 
 	/* Read calibration coefficients */
-	if (i2c_read_register_block(i2c, addr, REG_COEF, buf, 18, 0)) {
+	uint8_t read_len = (ctx->dev_id == SPA06_DEVICE_ID ? 21 : 18);
+	if (i2c_read_register_block(i2c, addr, REG_COEF, buf, read_len, 0)) {
 		*result = -12;
 		goto panic;
 	}
@@ -182,11 +186,30 @@ void* dps310_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 	ctx->c30 = twos_complement((buf[16] << 8) | buf[17], 16);
 	DEBUG_PRINT("c30 = %08x %d\n", ctx->c30, ctx->c30);
 
+	if (ctx->dev_id == SPA06_DEVICE_ID) {
+		ctx->c31 = twos_complement((buf[18] << 4) | (buf[19] >> 4), 12);
+		DEBUG_PRINT("c31 = %08x %d\n", ctx->c31, ctx->c31);
+		ctx->c40 = twos_complement(((buf[19] & 0x0f) << 8) | buf[20], 12);
+		DEBUG_PRINT("c40 = %08x %d\n", ctx->c40, ctx->c40);
+	}
+
 	return ctx;
 
 panic:
 	free(ctx);
 	return NULL;
+}
+
+
+void* dps310_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
+{
+	return sensor_init(i2c, addr, result, DPS310_DEVICE_ID);
+}
+
+
+void* spa06_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
+{
+	return sensor_init(i2c, addr, result, SPA06_DEVICE_ID);
 }
 
 
@@ -204,7 +227,7 @@ int dps310_get_measurement(void *ctx, float *temp, float *pressure, float *humid
 	int res;
 	uint8_t status;
 	uint32_t meas;
-	double t_raw_sc, p_raw_sc;
+	float t_raw_sc, p_raw_sc;
 
 
 	/* Get sensor status */
@@ -218,13 +241,14 @@ int dps310_get_measurement(void *ctx, float *temp, float *pressure, float *humid
 		if (res)
 			return -2;
 
-		t_raw_sc = (double)twos_complement(meas, 24) / SCALE_FACTOR;
+		t_raw_sc = (float)twos_complement(meas, 24) / SCALE_FACTOR;
 		DEBUG_PRINT("T_raw_sc = %0.6lf\n", t_raw_sc);
 		*temp =  c->c0 * 0.5 + c->c1 * t_raw_sc;
 		c->temp = *temp;
 	} else {
 		*temp = c->temp;
 		*pressure = c->pressure;
+		*humidity = -1.0;
 		return 0;
 	}
 
@@ -234,10 +258,18 @@ int dps310_get_measurement(void *ctx, float *temp, float *pressure, float *humid
 		if (res)
 			return -4;
 
-		p_raw_sc = (double)twos_complement(meas, 24) / SCALE_FACTOR;
+		p_raw_sc = (float)twos_complement(meas, 24) / SCALE_FACTOR;
 		DEBUG_PRINT("P_raw_sc = %0.6lf\n", p_raw_sc);
-		*pressure = c->c00 + p_raw_sc * (c->c10 + p_raw_sc * (c->c20 + p_raw_sc * c->c30))
-			+ t_raw_sc * c->c01 + t_raw_sc * p_raw_sc * (c->c11 + p_raw_sc * c->c21);
+		if (c->dev_id == SPA06_DEVICE_ID) {
+			float p_raw_sc_2 = p_raw_sc * p_raw_sc;
+			float p_raw_sc_3 = p_raw_sc_2 * p_raw_sc;
+			float p_raw_sc_4 = p_raw_sc_3 * p_raw_sc;
+			*pressure = (c->c00 + c->c10 * p_raw_sc + c->c20 * p_raw_sc_2 + c->c30 * p_raw_sc_3 + c->c40 * p_raw_sc_4
+				+ t_raw_sc * (c->c01 + c->c11 * p_raw_sc + c->c21 * p_raw_sc_2 + c->c31 * p_raw_sc_3)) / 100.0;
+		} else {
+			*pressure = c->c00 + p_raw_sc * (c->c10 + p_raw_sc * (c->c20 + p_raw_sc * c->c30))
+				+ t_raw_sc * c->c01 + t_raw_sc * p_raw_sc * (c->c11 + p_raw_sc * c->c21);
+		}
 		c->pressure = *pressure;
 	} else {
 		*pressure = c->pressure;
