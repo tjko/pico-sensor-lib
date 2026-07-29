@@ -36,7 +36,7 @@ SI7021||0x40|Temperature and Humidity sensor, 0.4C accuracy
 STTS22H||0x38, 0x3c, 0x3e, 0x3f|Temperature Sensor, 0.5C accuracy
 TC74|TC74A0|0x48 - 0x4f|Digital Thermal Sensor, 2C accuracy
 TMP102||0x48, 0x49, 0x4a, 0x4b|Temperature Sensor, 2C accuracy
-TMP117||0x48, 0x49, 0x4a, 0x4b|Temperature Sensor, 0.1C accuracy
+TMP11x|TMP117, TMP119|0x48, 0x49, 0x4a, 0x4b|Temperature Sensor, 0.1C accuracy
 
 
 ## Usage
