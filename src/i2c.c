@@ -78,6 +78,7 @@ int bmp280_get_measurement(void *ctx, float *temp, float *pressure, float *humid
 void* dps310_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int dps310_start_measurement(void *ctx);
 int dps310_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
+void* spa06_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 
 /* i2c_hdc302x.c */
 void* hdc302x_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
@@ -214,6 +215,11 @@ static const char* sht4x_aliases[] = {
 	NULL
 };
 
+static const char* spa06_aliases[] = {
+	"SPA06-003",
+	NULL
+};
+
 static const char* tc74_aliases[] = {
 	"TC74A0",
 	NULL
@@ -251,6 +257,7 @@ static const i2c_sensor_entry_t i2c_sensor_types[] = {
 	{ "SHT3x", sht3x_init, sht3x_start_measurement, sht3x_get_measurement, NULL, true, 1, sht3x_aliases },
 	{ "SHT4x", sht4x_init, sht4x_start_measurement, sht4x_get_measurement, NULL, true, 1, sht4x_aliases },
 	{ "SI7021", si7021_init, si7021_start_measurement, si7021_get_measurement, NULL, false, 1, NULL },
+	{ "SPA06", spa06_init, dps310_start_measurement, dps310_get_measurement, NULL, false, 1, spa06_aliases },
 	{ "STTS22H", stts22h_init, stts22h_start_measurement, stts22h_get_measurement, NULL, false, 1, NULL },
 	{ "TC74", tc74_init, tc74_start_measurement, tc74_get_measurement, NULL, false, 1, tc74_aliases },
 	{ "TMP102", tmp102_init, tmp102_start_measurement, tmp102_get_measurement, NULL, false, 1, NULL },
