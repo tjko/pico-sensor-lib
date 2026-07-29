@@ -169,11 +169,10 @@ void* tmp102_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
 int tmp102_start_measurement(void *ctx);
 int tmp102_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
-/* i2c_tmp117.c */
-void* tmp117_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
-int tmp117_start_measurement(void *ctx);
-int tmp117_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
-
+/* i2c_tmp11x.c */
+void* tmp11x_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result);
+int tmp11x_start_measurement(void *ctx);
+int tmp11x_get_measurement(void *ctx, float *temp, float *pressure, float *humidity);
 
 
 
@@ -220,6 +219,13 @@ static const char* tc74_aliases[] = {
 	NULL
 };
 
+static const char* tmp11x_aliases[] = {
+	"TMP117",
+	"TMP119",
+	NULL
+};
+
+
 static const i2c_sensor_entry_t i2c_sensor_types[] = {
 	{ "NONE", NULL, NULL, NULL, NULL, false, 0, NULL  }, /* this needs to be first so that valid sensors have index > 0 */
 	{ "ADT7410", adt7410_init, adt7410_start_measurement, adt7410_get_measurement, NULL, false, 1, NULL },
@@ -248,7 +254,7 @@ static const i2c_sensor_entry_t i2c_sensor_types[] = {
 	{ "STTS22H", stts22h_init, stts22h_start_measurement, stts22h_get_measurement, NULL, false, 1, NULL },
 	{ "TC74", tc74_init, tc74_start_measurement, tc74_get_measurement, NULL, false, 1, tc74_aliases },
 	{ "TMP102", tmp102_init, tmp102_start_measurement, tmp102_get_measurement, NULL, false, 1, NULL },
-	{ "TMP117", tmp117_init, tmp117_start_measurement, tmp117_get_measurement, NULL, false, 1, NULL },
+	{ "TMP11x", tmp11x_init, tmp11x_start_measurement, tmp11x_get_measurement, NULL, false, 1, tmp11x_aliases },
 	{ NULL, NULL, NULL, NULL, NULL, false, 0, NULL }
 };
 

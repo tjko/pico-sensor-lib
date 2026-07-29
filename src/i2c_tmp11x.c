@@ -1,5 +1,5 @@
-/* i2c_tmp117.c
-   Copyright (C) 2024 Timo Kokkonen <tjko@iki.fi>
+/* i2c_tmp11x.c
+   Copyright (C) 2024-2026 Timo Kokkonen <tjko@iki.fi>
 
    SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -26,16 +26,24 @@
 
 #include "pico_sensor_lib/i2c.h"
 
-/* TMP117 Registers */
-#define TMP117_REG_TEMP_RESULT  0x00
-#define TMP117_REG_CONFIG       0x01
-#define TMP117_REG_DEVICE_ID    0x0f
+/* TMP117/TMP119 Registers */
+#define REG_TEMP_RESULT  0x00
+#define REG_CONFIG       0x01
+#define REG_THIGH_LIMIT  0x02
+#define REG_TLOW_LIMIT   0x03
+#define REG_EEPROM_UL    0x04
+#define REG_EEPROM1      0x05
+#define REG_EEPROM2      0x06
+#define REG_TEMP_OFFSET  0x07
+#define REG_EEPROM3      0x08
+#define REG_DEVICE_ID    0x0f
 
-#define TMP117_DEVICE_ID 0x117
+#define TMP117_DEVICE_ID 0x0117
+#define TMP119_DEVICE_ID 0x2117
 
 
 
-void* tmp117_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
+void* tmp11x_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
 	uint16_t val = 0;
 	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
@@ -46,17 +54,17 @@ void* tmp117_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 	ctx->addr = addr;
 
 	/* Read and verify device ID */
-	if (i2c_read_register_u16(i2c, addr, TMP117_REG_DEVICE_ID, &val)) {
+	if (i2c_read_register_u16(i2c, addr, REG_DEVICE_ID, &val)) {
 		*result = -1;
 		goto panic;
 	}
-	if (val != TMP117_DEVICE_ID) {
+	if (!(val == TMP117_DEVICE_ID || val == TMP119_DEVICE_ID)) {
 		*result = -2;
 		goto panic;
 	}
 
 	/* Reset Sensor */
-	if (i2c_write_register_u16(i2c, addr, TMP117_REG_CONFIG, 0x0222)) {
+	if (i2c_write_register_u16(i2c, addr, REG_CONFIG, 0x0002)) {
 		*result = -3;
 		goto panic;
 	}
@@ -65,7 +73,7 @@ void* tmp117_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 	sleep_us(2500);
 
 	/* Read configuration register */
-	if (i2c_read_register_u16(i2c, addr, TMP117_REG_CONFIG, &val)) {
+	if (i2c_read_register_u16(i2c, addr, REG_CONFIG, &val)) {
 		*result = -4;
 		goto panic;
 	}
@@ -84,7 +92,7 @@ panic:
 }
 
 
-int tmp117_start_measurement(void *ctx)
+int tmp11x_start_measurement(void *ctx)
 {
 	/* Nothing to do, sensor is in continuous measurement mode... */
 
@@ -92,7 +100,7 @@ int tmp117_start_measurement(void *ctx)
 }
 
 
-int tmp117_get_measurement(void *ctx, float *temp, float *pressure, float *humidity)
+int tmp11x_get_measurement(void *ctx, float *temp, float *pressure, float *humidity)
 {
 	i2c_sensor_context_t *c = (i2c_sensor_context_t*)ctx;
 	int res;
@@ -100,7 +108,7 @@ int tmp117_get_measurement(void *ctx, float *temp, float *pressure, float *humid
 
 
 	/* Read configuration register */
-	res = i2c_read_register_u16(c->i2c, c->addr, TMP117_REG_CONFIG, &val);
+	res = i2c_read_register_u16(c->i2c, c->addr, REG_CONFIG, &val);
 	if (res)
 		return -1;
 
@@ -109,7 +117,7 @@ int tmp117_get_measurement(void *ctx, float *temp, float *pressure, float *humid
 		return 1;
 
 	/* Get Measurement */
-	res = i2c_read_register_u16(c->i2c, c->addr, TMP117_REG_TEMP_RESULT, &val);
+	res = i2c_read_register_u16(c->i2c, c->addr, REG_TEMP_RESULT, &val);
 	if (res)
 		return -2;
 
