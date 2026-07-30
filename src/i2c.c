@@ -220,6 +220,11 @@ static const char* spa06_aliases[] = {
 	NULL
 };
 
+static const char* spl07_aliases[] = {
+	"SPL07-003",
+	NULL
+};
+
 static const char* tc74_aliases[] = {
 	"TC74A0",
 	NULL
@@ -258,6 +263,7 @@ static const i2c_sensor_entry_t i2c_sensor_types[] = {
 	{ "SHT4x", sht4x_init, sht4x_start_measurement, sht4x_get_measurement, NULL, true, 1, sht4x_aliases },
 	{ "SI7021", si7021_init, si7021_start_measurement, si7021_get_measurement, NULL, false, 1, NULL },
 	{ "SPA06", spa06_init, dps310_start_measurement, dps310_get_measurement, NULL, false, 1, spa06_aliases },
+	{ "SPL07", spa06_init, dps310_start_measurement, dps310_get_measurement, NULL, false, 1, spl07_aliases },
 	{ "STTS22H", stts22h_init, stts22h_start_measurement, stts22h_get_measurement, NULL, false, 1, NULL },
 	{ "TC74", tc74_init, tc74_start_measurement, tc74_get_measurement, NULL, false, 1, tc74_aliases },
 	{ "TMP102", tmp102_init, tmp102_start_measurement, tmp102_get_measurement, NULL, false, 1, NULL },

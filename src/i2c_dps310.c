@@ -51,6 +51,7 @@
 
 #define SCALE_FACTOR 1040384  // 64 times oversampling (high precision)
 
+
 typedef struct dps310_context_t {
 	struct { I2C_SENSOR_CONTEXT_MEMBERS };
 	uint8_t dev_id;
@@ -78,6 +79,7 @@ static void* sensor_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result, uint8_t
 	uint8_t coef_source = 0;
 	dps310_context_t *ctx = calloc(1, sizeof(dps310_context_t));
 	uint8_t buf[21];
+	int wait_t;
 
 
 	if (!ctx)
@@ -101,12 +103,27 @@ static void* sensor_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result, uint8_t
 
 	/* Reset Sensor */
 	if (i2c_write_register_u8(i2c, addr, REG_RESET, 0x89)) {
-		*result = -4;
+		*result = -3;
 		goto panic;
 	}
 
-	/* Wait for sensor to soft reset (reset should take 40ms per datasheet)  */
-	sleep_ms(40);
+	/* Wait for sensor to soft reset (reset should take at most 40ms per datasheet)  */
+	wait_t = 40;
+	do {
+		sleep_ms(5);
+		wait_t -= 5;
+
+		if (!i2c_read_register_u8(i2c, addr, REG_MEAS_CFG, &val)) {
+			/* Check if COEF_RDY and SENSOR_RDY are set */
+			if ((val & 0xc0) == 0xc0) {
+				break;
+			}
+		}
+	} while (wait_t > 0);
+	if (wait_t <= 0) {
+		*result = -4;
+		goto panic;
+	}
 
 	/* Get coefficient source */
 	if (ctx->dev_id == DPS310_DEVICE_ID) {
@@ -120,7 +137,7 @@ static void* sensor_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result, uint8_t
 
 	/* Write configuration registers */
 
-	// 4 pressure measruementes per second, 64 times oversampling
+	// 4 pressure measurementes per second, 64 times oversampling
 	if (i2c_write_register_u8(i2c, addr, REG_PRS_CFG, 0x26)) {
 		*result = -6;
 		goto panic;
@@ -217,7 +234,7 @@ int dps310_start_measurement(void *ctx)
 {
 	/* Nothing to do, sensor is in continuous measurement mode... */
 
-	return 1000;  /* measurement should be available after 1s */
+	return 250;  /* measurement should be available after 250ms */
 }
 
 

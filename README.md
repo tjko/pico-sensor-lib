@@ -34,6 +34,7 @@ SHT4x|SHT40, SHT41, SHT43, SHT45|0x44|SHT4x Series Temperature and Humidity sens
 SHTC3||0x70|Temperature and Humidity sensor, 0.2C accuracy
 SI7021||0x40|Temperature and Humidity sensor, 0.4C accuracy
 SPA06|SPA06-003|0x77, 0x76|Digital Temperature and Pressure Sensor, 1C accuracy
+SPL07|SPL07-003|0x77, 0x76|Digital Temperature and Pressure Sensor, 1C accuracy
 STTS22H||0x38, 0x3c, 0x3e, 0x3f|Temperature Sensor, 0.5C accuracy
 TC74|TC74A0|0x48 - 0x4f|Digital Thermal Sensor, 2C accuracy
 TMP102||0x48, 0x49, 0x4a, 0x4b|Temperature Sensor, 2C accuracy
