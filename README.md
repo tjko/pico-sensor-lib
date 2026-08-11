@@ -38,7 +38,7 @@ SPL07|SPL07-003|0x77, 0x76|Digital Temperature and Pressure Sensor, 1C accuracy
 STTS22H||0x38, 0x3c, 0x3e, 0x3f|Temperature Sensor, 0.5C accuracy
 TC74|TC74A0|0x48 - 0x4f|Digital Thermal Sensor, 2C accuracy
 TMP102||0x48, 0x49, 0x4a, 0x4b|Temperature Sensor, 2C accuracy
-TMP11x|TMP117, TMP119|0x48, 0x49, 0x4a, 0x4b|High-Accuracy Temperature Sensors: TMP117 (0.1C), TMP119 (0.03C)
+TMP11x|TMP116, TMP117, TMP119|0x48, 0x49, 0x4a, 0x4b|High-Accuracy Temperature Sensors: TMP116 (0.2C), TMP117 (0.1C), TMP119 (0.03C)
 
 
 ## Usage

@@ -231,6 +231,7 @@ static const char* tc74_aliases[] = {
 };
 
 static const char* tmp11x_aliases[] = {
+	"TMP116",
 	"TMP117",
 	"TMP119",
 	NULL

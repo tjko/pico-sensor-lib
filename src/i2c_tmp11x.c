@@ -38,15 +38,20 @@
 #define REG_EEPROM3      0x08
 #define REG_DEVICE_ID    0x0f
 
-#define TMP117_DEVICE_ID 0x0117
-#define TMP119_DEVICE_ID 0x2117
+#define TMP116_DEVICE_ID 0x0116
+#define TMP117_DEVICE_ID 0x0117 // TMP119 uses same ID
 
+
+
+#define DEFAULT_CONFIG 0x0220 // Continuous Conversion, 1s cycle, 8 averaged conversions
 
 
 void* tmp11x_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 {
-	uint16_t val = 0;
 	i2c_sensor_context_t *ctx = calloc(1, sizeof(i2c_sensor_context_t));
+	uint16_t cfg = DEFAULT_CONFIG;
+	uint16_t dev_id = 0;
+	uint16_t val = 0;
 
 	if (!ctx)
 		return NULL;
@@ -58,13 +63,17 @@ void* tmp11x_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 		*result = -1;
 		goto panic;
 	}
-	if (!(val == TMP117_DEVICE_ID || val == TMP119_DEVICE_ID)) {
+	dev_id = val & 0x0fff;
+	if (!(dev_id == TMP116_DEVICE_ID || dev_id == TMP117_DEVICE_ID)) {
 		*result = -2;
 		goto panic;
 	}
 
 	/* Reset Sensor */
-	if (i2c_write_register_u16(i2c, addr, REG_CONFIG, 0x0002)) {
+	if (dev_id == TMP117_DEVICE_ID) {
+		cfg |= 0x0002; /* trigger soft-reset */
+	}
+	if (i2c_write_register_u16(i2c, addr, REG_CONFIG, cfg)) {
 		*result = -3;
 		goto panic;
 	}
@@ -79,7 +88,7 @@ void* tmp11x_init(i2c_inst_t *i2c, uint8_t addr, int16_t *result)
 	}
 
 	/* Check that confuration is now as expected... */
-	if ((val & 0x0FFC) != 0x0220) {
+	if ((val & 0x0FFC) != DEFAULT_CONFIG) {
 		*result = -5;
 		goto panic;
 	}
